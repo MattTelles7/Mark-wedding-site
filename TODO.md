@@ -2,20 +2,32 @@
 
 ## Before First Release
 
-- [ ] Replace temporary couple names, date, venue, story, schedule, FAQ, travel,
-      and attire.
-- [ ] Confirm final meal choices and RSVP deadline.
-- [ ] Decide whether RSVPs should support per-guest meal choices instead of one
-      meal choice per invitation.
-- [ ] Confirm invitation/household matching and duplicate-response behavior.
-- [x] Test the public pages at iPhone and desktop sizes.
-- [ ] Submit and verify a declined RSVP example.
-- [ ] Confirm admin logout and RSVP deletion through a real browser.
-- [x] Confirm admin login and CSV export.
-- [x] Confirm SQLite persistence through a container restart.
-- [x] Confirm SQLite persistence through the branch-aware installer and rebuild.
+- [x] Replace temporary sample names, date, story, wedding party, travel, FAQ,
+      hotel, venue, and address content.
+- [x] Add confirmed names, hosts, wedding date, RSVP deadline, ceremony time,
+      and ceremony name.
+- [x] Add a live wedding countdown with wedding-day and post-event states.
+- [x] Add replaceable hero and portrait photo placeholders.
+- [x] Replace free-form RSVPs with household and individual invited-person
+      responses.
+- [x] Add admin RSVP open/closed control stored in SQLite.
+- [x] Prevent public changes after household confirmation.
+- [x] Allow admin response editing and household unlocking.
+- [x] Add household/guest CSV export and dashboard counts.
+- [x] Test the public pages at 390px and desktop widths.
+- [x] Submit and verify a mixed attending/declined household RSVP.
+- [x] Confirm admin login, household creation, public locking, admin unlocking,
+      and admin response editing through a real browser.
+- [ ] Add the confirmed ceremony address.
+- [ ] Add confirmed reception time and location.
+- [ ] Add confirmed registry links/details.
+- [ ] Replace the three photo placeholders with final images.
+- [ ] Import the real invitation household and guest list.
+- [ ] Test household and invited-person deletion through a real browser.
+- [ ] Confirm admin logout through a real browser.
+- [ ] Deploy this feature to the Debian 13 VM and confirm migration and
+      household data persistence through restart, rebuild, and reboot.
 - [ ] Test a branch-aware fresh install on a clean Ubuntu or Debian VM.
-- [x] Confirm Docker and the app recover after a full VM reboot.
 - [ ] Test switching a VM from `develop` to `main` after a manual release.
 - [ ] Configure VM firewall, Cloudflare, DNS, TLS, and backups.
 - [ ] Restrict direct VM traffic before trusting proxy IP headers in production.
@@ -23,8 +35,5 @@
 
 ## Later
 
-- [ ] Add editing of mistaken submissions if deletion/re-entry is insufficient.
-- [ ] Consider signed invitation codes if duplicate/fabricated RSVPs become a
-      concern.
+- [ ] Consider signed invitation codes if surname search is not private enough.
 - [ ] Add a database backup helper only if VM-level backups are not adequate.
-- [ ] Replace all temporary sample content with confirmed wedding information.

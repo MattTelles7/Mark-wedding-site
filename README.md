@@ -1,8 +1,8 @@
 # Wedding RSVP
 
-A self-hosted wedding website with a public RSVP form and a password-protected
-admin dashboard. The app is designed to run on one Ubuntu or Debian VM with
-Docker Compose and a persistent SQLite database.
+A self-hosted invitation-inspired wedding website with household-based public
+RSVPs and a password-protected admin dashboard. The app runs on one Ubuntu or
+Debian VM with Docker Compose and a persistent SQLite database.
 
 ## Branches
 
@@ -14,11 +14,17 @@ Do not use `main` as the active development branch.
 
 ## Features
 
-- Mobile-first wedding landing page
-- Server-validated RSVP form with honeypot and rate limiting
+- Mobile-first navy/cream invitation homepage
+- Live wedding countdown and reduced-motion-aware photo reveals
+- Admin-managed households and individual invited people
+- Exact surname search and server-validated per-person RSVP responses
+- Final household locking with admin-only editing and unlocking
+- Database-backed RSVP open/closed setting
+- Honeypot and in-memory search/submission rate limiting
 - SQLite persistence in `./data/app.db`
 - Password-protected admin dashboard
-- RSVP summaries, deletion, and CSV export
+- Six response summaries, household filtering, editing, and CSV export
+- Additive migration that preserves the original free-form `rsvps` table
 - Docker Compose deployment on port `3000`
 - Repeatable install and update scripts
 
@@ -40,7 +46,9 @@ Do not use `main` as the active development branch.
 
 4. Open [http://localhost:3000](http://localhost:3000).
 
-The database is created automatically at `data/app.db`.
+The database is created automatically at `data/app.db`. Public RSVPs start
+closed. Sign in at `/admin`, create households and invited people, then open
+RSVPs when the invitation list is ready.
 
 ## Quality Checks
 
@@ -128,7 +136,7 @@ sudo systemctl is-active docker
 
 Verify reboot and data persistence:
 
-1. Submit a recognizable test RSVP and confirm it in `/admin`.
+1. Add a test household in `/admin`, open RSVPs, and submit its response.
 2. Run `sudo docker compose restart` and confirm the response remains.
 3. Rebuild with `sudo docker compose up -d --build` and confirm it remains.
 4. Reboot the VM, reconnect, run `sudo docker compose ps`, and confirm the
