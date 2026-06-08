@@ -1,152 +1,115 @@
 "use client";
 
-import { useActionState } from "react";
-import { submitRsvp, type RsvpFormState } from "./actions";
+import { useActionState, useState } from "react";
+import type { PublicHousehold } from "@/lib/database";
+import {
+  searchHouseholds,
+  submitHouseholdRsvp,
+  type HouseholdResponseState,
+  type HouseholdSearchState,
+} from "./actions";
 
-const initialState: RsvpFormState = {};
+const initialSearchState: HouseholdSearchState = {};
+const initialResponseState: HouseholdResponseState = {};
 
-export function RsvpForm() {
-  const [state, formAction, pending] = useActionState(submitRsvp, initialState);
+function statusLabel(status: PublicHousehold["guests"][number]["status"]) {
+  const labels = {
+    pending: "Awaiting response",
+    attending: "Attending",
+    declined: "Declined",
+  };
+
+  return labels[status];
+}
+
+function HouseholdResponseForm({ household }: { household: PublicHousehold }) {
+  const [state, formAction, pending] = useActionState(
+    submitHouseholdRsvp,
+    initialResponseState,
+  );
+
+  if (household.isLocked) {
+    return (
+      <section className="selected-household" aria-live="polite">
+        <p className="household-kicker">Response received</p>
+        <h2>{household.householdName}</h2>
+        <p>
+          This household has already submitted its RSVP. Contact the host if a
+          response needs to be changed.
+        </p>
+        <ul className="locked-response-list">
+          {household.guests.map((guest) => (
+            <li key={guest.id}>
+              <span>
+                {guest.firstName} {guest.lastName}
+              </span>
+              <strong>{statusLabel(guest.status)}</strong>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
 
   return (
-    <form className="form-grid" action={formAction} noValidate>
+    <form className="selected-household" action={formAction}>
+      <input type="hidden" name="householdId" value={household.id} />
+      <p className="household-kicker">Your invitation</p>
+      <h2>{household.householdName}</h2>
+      <p>Choose a response for each person listed below.</p>
+
       {state.message ? (
         <p className="form-error" role="alert">
           {state.message}
         </p>
       ) : null}
 
-      <div className="field">
-        <label htmlFor="fullName">Full name</label>
-        <input
-          id="fullName"
-          name="fullName"
-          type="text"
-          autoComplete="name"
-          maxLength={120}
-          required
-          aria-describedby={
-            state.errors?.fullName ? "fullName-error" : undefined
-          }
-        />
-        {state.errors?.fullName ? (
-          <span className="field-error" id="fullName-error">
-            {state.errors.fullName}
-          </span>
-        ) : null}
+      <div className="guest-response-list">
+        {household.guests.map((guest) => (
+          <fieldset className="guest-response" key={guest.id}>
+            <legend>
+              {guest.firstName} {guest.lastName}
+            </legend>
+            <label>
+              <input
+                type="radio"
+                name={`guest-${guest.id}`}
+                value="attending"
+                required
+              />
+              <span>Joyfully accepts</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name={`guest-${guest.id}`}
+                value="declined"
+                required
+              />
+              <span>Regretfully declines</span>
+            </label>
+          </fieldset>
+        ))}
       </div>
 
-      <div className="field">
-        <label htmlFor="attending">Will you be attending?</label>
-        <select
-          id="attending"
-          name="attending"
-          defaultValue=""
-          required
-          aria-describedby={
-            state.errors?.attending ? "attending-error" : undefined
-          }
-        >
-          <option value="" disabled>
-            Choose a response
-          </option>
-          <option value="yes">Joyfully accepts</option>
-          <option value="no">Regretfully declines</option>
-        </select>
-        {state.errors?.attending ? (
-          <span className="field-error" id="attending-error">
-            {state.errors.attending}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="field">
-        <label htmlFor="guestCount">Total guests in your party</label>
-        <input
-          id="guestCount"
-          name="guestCount"
-          type="number"
-          min={1}
-          max={10}
-          defaultValue={1}
-          inputMode="numeric"
-          aria-describedby={
-            state.errors?.guestCount ? "guestCount-error" : undefined
-          }
-        />
-        {state.errors?.guestCount ? (
-          <span className="field-error" id="guestCount-error">
-            {state.errors.guestCount}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="field">
-        <label htmlFor="mealChoice">Meal choice</label>
-        <select
-          id="mealChoice"
-          name="mealChoice"
-          defaultValue=""
-          aria-describedby={
-            state.errors?.mealChoice ? "mealChoice-error" : undefined
-          }
-        >
-          <option value="" disabled>
-            Select a meal
-          </option>
-          <option value="chicken">Herb-roasted chicken</option>
-          <option value="beef">Braised beef</option>
-          <option value="vegetarian">Vegetarian</option>
-          <option value="vegan">Vegan</option>
-          <option value="kids">Kids meal</option>
-        </select>
-        {state.errors?.mealChoice ? (
-          <span className="field-error" id="mealChoice-error">
-            {state.errors.mealChoice}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="field">
-        <label htmlFor="songRequest">Song request</label>
-        <input
-          id="songRequest"
-          name="songRequest"
-          type="text"
-          maxLength={120}
-          placeholder="What will get you on the dance floor?"
-          aria-describedby={
-            state.errors?.songRequest ? "songRequest-error" : undefined
-          }
-        />
-        {state.errors?.songRequest ? (
-          <span className="field-error" id="songRequest-error">
-            {state.errors.songRequest}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="field">
-        <label htmlFor="message">Message for the couple</label>
-        <textarea
-          id="message"
-          name="message"
-          rows={4}
-          maxLength={600}
-          placeholder="Optional"
-          aria-describedby={state.errors?.message ? "message-error" : undefined}
-        />
-        {state.errors?.message ? (
-          <span className="field-error" id="message-error">
-            {state.errors.message}
-          </span>
-        ) : null}
+      <div className="final-warning">
+        <strong>Please review before confirming</strong>
+        <p>
+          After submission, this household cannot change its response online.
+          Contact the host if an update is needed.
+        </p>
+        <label>
+          <input type="checkbox" name="confirmFinal" value="yes" required />
+          <span>I understand that this RSVP is final.</span>
+        </label>
       </div>
 
       <div className="honeypot" aria-hidden="true">
-        <label htmlFor="website">Leave this field empty</label>
+        <label htmlFor={`response-website-${household.id}`}>
+          Leave this field empty
+        </label>
         <input
-          id="website"
+          id={`response-website-${household.id}`}
           name="website"
           type="text"
           tabIndex={-1}
@@ -154,11 +117,101 @@ export function RsvpForm() {
         />
       </div>
 
-      <div className="form-actions">
-        <button className="button button-secondary" disabled={pending}>
-          {pending ? "Sending…" : "Send RSVP"}
-        </button>
-      </div>
+      <button className="button button-primary" disabled={pending}>
+        {pending ? "Confirming…" : "Confirm household RSVP"}
+      </button>
     </form>
+  );
+}
+
+export function RsvpLookup() {
+  const [state, formAction, pending] = useActionState(
+    searchHouseholds,
+    initialSearchState,
+  );
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const selectedHousehold = state.households?.find(
+    (household) => household.id === selectedId,
+  );
+
+  return (
+    <div className="rsvp-lookup">
+      <form
+        className="lookup-form"
+        action={formAction}
+        onSubmit={() => setSelectedId(null)}
+      >
+        <div className="field">
+          <label htmlFor="lastName">Last name on the invitation</label>
+          <input
+            id="lastName"
+            name="lastName"
+            type="search"
+            autoComplete="family-name"
+            minLength={2}
+            maxLength={80}
+            required
+          />
+        </div>
+
+        <div className="honeypot" aria-hidden="true">
+          <label htmlFor="search-website">Leave this field empty</label>
+          <input
+            id="search-website"
+            name="website"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
+
+        <button className="button button-primary" disabled={pending}>
+          {pending ? "Searching…" : "Find my invitation"}
+        </button>
+      </form>
+
+      {state.message ? (
+        <p className="lookup-message" role="status">
+          {state.message}
+        </p>
+      ) : null}
+
+      {state.households && state.households.length > 0 ? (
+        <section className="household-results" aria-live="polite">
+          <div>
+            <p className="household-kicker">Search results</p>
+            <h2>Select your household</h2>
+          </div>
+          <div className="household-result-list">
+            {state.households.map((household) => (
+              <button
+                className="household-result"
+                key={household.id}
+                type="button"
+                aria-pressed={selectedId === household.id}
+                onClick={() => setSelectedId(household.id)}
+              >
+                <span>
+                  <strong>{household.householdName}</strong>
+                  <small>
+                    {household.guests
+                      .map((guest) => `${guest.firstName} ${guest.lastName}`)
+                      .join(", ")}
+                  </small>
+                </span>
+                <b>{household.isLocked ? "Submitted" : "Select"}</b>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {selectedHousehold ? (
+        <HouseholdResponseForm
+          key={selectedHousehold.id}
+          household={selectedHousehold}
+        />
+      ) : null}
+    </div>
   );
 }
