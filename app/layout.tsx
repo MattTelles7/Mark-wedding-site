@@ -3,10 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Lilly & Christopher",
-    template: "%s | Lilly & Christopher",
+    default: "Mark & Guerdithe",
+    template: "%s | Mark & Guerdithe",
   },
-  description: "Wedding details and RSVP for Lilly and Christopher",
+  description: "Wedding details and RSVP for Mark and Guerdithe",
 };
 
 export default function RootLayout({
