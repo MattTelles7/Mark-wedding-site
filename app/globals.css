@@ -149,6 +149,7 @@ h3,
 
 .hero-copy {
   text-align: center;
+  animation: invitation-copy-reveal 650ms ease-out both;
 }
 
 .eyebrow {
@@ -246,6 +247,8 @@ h3,
   padding: 0.6rem;
   border: 1px solid rgba(216, 198, 165, 0.48);
   transform: rotate(2.5deg);
+  animation: invitation-photo-reveal 750ms 120ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    both;
 }
 
 .photo-placeholder {
@@ -416,10 +419,14 @@ h3,
 
 .portrait-card-left {
   transform: rotate(-3deg) translateY(0.7rem);
+  animation: portrait-left-reveal 650ms 220ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    both;
 }
 
 .portrait-card-right {
   transform: rotate(3deg);
+  animation: portrait-right-reveal 650ms 320ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    both;
 }
 
 .portrait-card .photo-placeholder-inner {
@@ -806,6 +813,54 @@ h3,
   color: var(--soft-ink);
 }
 
+@keyframes invitation-copy-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes invitation-photo-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px) rotate(4.5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(2.5deg);
+  }
+}
+
+@keyframes portrait-left-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(32px) rotate(-5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0.7rem) rotate(-3deg);
+  }
+}
+
+@keyframes portrait-right-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(32px) rotate(5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(3deg);
+  }
+}
+
 @media (min-width: 680px) {
   .site-nav {
     width: min(1180px, calc(100% - 4rem));
@@ -909,6 +964,9 @@ h3,
   *,
   *::before,
   *::after {
+    animation-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

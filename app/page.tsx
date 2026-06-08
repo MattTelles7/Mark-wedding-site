@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Countdown } from "@/app/countdown";
 import { getSiteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -44,9 +45,11 @@ export default function HomePage() {
             <p className="hero-date">
               <time dateTime={site.weddingDateIso}>{site.weddingDate}</time>
             </p>
-            {site.countdown ? (
-              <p className="countdown">{site.countdown}</p>
-            ) : null}
+            <Countdown
+              weddingDateIso={site.weddingDateIso}
+              ceremonyTime={site.ceremony.time}
+              initialMessage={site.countdown}
+            />
             <Link className="button button-light" href="/rsvp">
               Respond to the invitation
             </Link>
