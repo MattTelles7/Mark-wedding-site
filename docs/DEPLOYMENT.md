@@ -9,45 +9,121 @@
 
 Cloudflare, DNS, TLS, firewall rules, and VM backups are managed separately.
 
-## First Install
+## Branch Model
 
-Run:
+- `develop` is the active integration and test deployment branch.
+- `main` is the stable release branch controlled manually by the project owner.
+- Running an installer for a different branch safely switches the VM checkout.
+
+## Install or Update
+
+Develop VM:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MattTelles-7/Mark-wedding-site/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MattTelles-7/Mark-wedding-site/develop/install.sh | sudo bash -s -- --branch develop
 ```
 
-The installer:
+Main VM:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MattTelles-7/Mark-wedding-site/main/install.sh | sudo bash -s -- --branch main
+```
+
+The same command handles a first install and later updates. It:
 
 1. Installs Git, Docker, Docker Compose, OpenSSL, and supporting packages.
-2. Clones or updates the repository.
-3. Creates the persistent data directory.
-4. Creates `.env` and generates missing secrets.
-5. Builds and starts the service.
+2. Enables and starts Docker through systemd.
+3. Clones or safely adopts/updates `/opt/wedding-rsvp`.
+4. Checks out only `main` or `develop` and requires a clean fast-forward.
+5. Preserves `/opt/wedding-rsvp/data` and `data/app.db`.
+6. Preserves `.env`, creating it only when absent.
+7. Adds missing `ADMIN_PASSWORD` or `SESSION_SECRET` values without replacing
+   the rest of `.env`.
+8. Builds the service with `docker compose up -d --build` and reports success
+   only after `/api/health` responds.
 
-The generated admin password is printed only when it is first created.
+The admin password is printed only when the installer generates a new value.
+The installer never runs `docker compose down -v`, removes Docker volumes,
+deletes `data/app.db`, or replaces an existing `.env`.
 
-The installer configures Docker from Docker's official Ubuntu/Debian package
-repository when Docker or the Compose plugin is missing. It also makes
-`/opt/wedding-rsvp/data` writable by the non-root container user.
+When `/opt/wedding-rsvp` is an older non-Git installation, the installer moves
+the previous app files to `/opt/wedding-rsvp.pre-git-<timestamp>`, creates a Git
+checkout, and moves the existing `.env` and `data` directory into it.
 
-## Updating
+The repository is currently private. Unauthenticated raw-file and clone URLs
+cannot access it. The exact one-liners work once the repository is public or
+the VM has authenticated GitHub access. The main one-liner additionally
+requires the project owner to have manually merged a release into `main`.
+
+## Direct Updates
 
 ```bash
-sudo /opt/wedding-rsvp/update.sh
+sudo /opt/wedding-rsvp/update.sh --branch develop
+sudo /opt/wedding-rsvp/update.sh --branch main
 ```
 
-This pulls with `--ff-only`, rebuilds the app, restarts the container, and
-prunes unused images. It does not remove the `data` directory.
+Omit `--branch` to update the currently checked-out `main` or `develop`
+branch. The updater refuses dirty or diverged checkouts, protected files
+tracked by the target branch, a missing `.env`, a missing `data` directory, or
+a Compose file that does not mount `./data` at `/app/data`.
 
-## Useful Commands
+To move a test VM from `develop` to `main`, run either the main one-liner or:
+
+```bash
+sudo /opt/wedding-rsvp/update.sh --branch main
+```
+
+## Troubleshooting
 
 ```bash
 cd /opt/wedding-rsvp
 sudo docker compose ps
-sudo docker compose logs -f app
-sudo docker compose restart app
+sudo docker compose logs -f
+sudo docker compose restart
+sudo systemctl status docker
+curl http://localhost:3000
+curl http://localhost:3000/api/health
 ```
+
+The Compose service uses `restart: unless-stopped`, and the installer enables
+Docker at boot. Check both:
+
+```bash
+sudo systemctl is-enabled docker
+sudo systemctl is-active docker
+sudo docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' wedding-rsvp
+```
+
+## Reboot and Persistence Test
+
+1. Submit a recognizable RSVP and confirm it appears in `/admin`.
+2. Confirm the database exists:
+
+   ```bash
+   sudo test -f /opt/wedding-rsvp/data/app.db
+   ```
+
+3. Restart and rebuild:
+
+   ```bash
+   cd /opt/wedding-rsvp
+   sudo docker compose restart
+   curl http://localhost:3000/api/health
+   sudo docker compose up -d --build
+   curl http://localhost:3000/api/health
+   ```
+
+4. Confirm the RSVP still appears in `/admin`.
+5. Reboot with `sudo reboot`, reconnect, and run:
+
+   ```bash
+   cd /opt/wedding-rsvp
+   sudo docker compose ps
+   curl http://localhost:3000/api/health
+   sudo test -f data/app.db
+   ```
+
+6. Confirm the same RSVP still appears in `/admin`.
 
 ## Backup
 

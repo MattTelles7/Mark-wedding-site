@@ -6,6 +6,11 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Branch-aware install and update commands for `develop` and `main`
+- GitHub Actions CI for formatting, linting, types, tests, builds, and shell
+  syntax
+- Lightweight `/api/health` endpoint used by the Docker healthcheck
+- VM reboot, troubleshooting, branch switching, and persistence documentation
 - Mobile-first wedding landing page with details, schedule, and FAQ sections
 - The Knot-inspired editorial design using original CSS/SVG decoration
 - Temporary Lilly & Christopher story, schedule, travel, FAQ, and wedding-party
@@ -17,3 +22,11 @@ All notable changes to this project are documented here.
 - Docker image, Docker Compose service, and persistent database mount
 - Ubuntu/Debian install and update scripts
 - Project rules, state, deployment, and customization documentation
+
+### Changed
+
+- Installer reruns now preserve `.env`, `data`, and `data/app.db` while safely
+  checking out only `develop` or `main`
+- Updates now refuse dirty/diverged Git state or deployment layouts that could
+  bypass the persistent data mount
+- Docker healthchecks now use `/api/health`

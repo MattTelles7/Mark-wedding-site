@@ -32,14 +32,20 @@
 
 ## Git Workflow
 
-- `main`: stable finished product
+- `main`: stable releases controlled and merged manually by the project owner
 - `develop`: active integration
 - `feature/*`: feature work
 - `fix/*`: bug fixes
 - `chore/*`: maintenance
 
-Do not commit meaningful work directly to `main`. Prefer Conventional Commits
-and keep each commit focused on one logical change.
+Codex works only on `develop` and `feature/*`, `fix/*`, or `chore/*` branches.
+Codex must not merge `develop` into `main` or push meaningful work directly to
+`main`. Work on one branch at a time. Delete a merged feature, fix, or chore
+branch after it is fully merged into `develop`; never delete `main` or
+`develop`.
+
+Prefer Conventional Commits and keep each commit focused on one logical
+change.
 
 Before work, inspect Git status, the branch, this file, `PROJECT_STATE.md`, and
 `TODO.md`. Before committing, run formatting, linting, type checking, tests,
@@ -49,8 +55,17 @@ and the production build. Update the project memory files when state changes.
 
 - Production installation path is `/opt/wedding-rsvp`.
 - App listens on port `3000`.
-- Rebuilds must preserve `/opt/wedding-rsvp/data`.
+- Rebuilds and installer reruns must preserve `/opt/wedding-rsvp/data`.
+- Never delete `/opt/wedding-rsvp/data/app.db` or an existing `.env`.
+- Never run `docker compose down -v` or delete Docker volumes during updates.
+- Re-running the branch-specific installer must be safe.
 - Cloudflare and public TLS are outside this repository.
+
+## Content
+
+- Do not invent missing wedding content.
+- Hide optional missing content or explicitly ask the project owner for it.
+- Temporary/sample content must be identified as temporary.
 
 ## Avoid
 
