@@ -23,10 +23,11 @@ export function getSiteConfig() {
       address: process.env.CEREMONY_ADDRESS || "",
     },
     reception: {
-      message: "Reception details to follow",
+      venue: "Knights of Columbus Hall",
+      address: "333 Main Street, Brookville, IN 47012",
+      timing: "Directly following Mass",
     },
     rsvpDeadline: process.env.RSVP_DEADLINE || "June 26, 2026",
     rsvpDeadlineIso: process.env.RSVP_DEADLINE_ISO || "2026-06-26",
-    registryMessage: "Registry details coming soon.",
   };
 }

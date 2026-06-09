@@ -27,16 +27,20 @@ After changing `.env`, restart the app:
 docker compose up -d
 ```
 
-## Missing Wedding Content
+## Wedding Details
 
-The following items intentionally remain placeholders:
+The following details are confirmed and hardcoded in `lib/site.ts`:
 
-- Reception: “Reception details to follow”
-- Registry: “Registry details coming soon.”
+- Reception: Knights of Columbus Hall, 333 Main Street, Brookville, IN 47012,
+  directly following Mass
 
-Update the reception and registry copy in `lib/site.ts` after details are
-confirmed. The current photos are stored in `public/images`, referenced from
+There is no registry. The registry section has been removed entirely.
+
+The current photos are stored in `public/images`, referenced from
 `app/page.tsx`, and presented by `app/globals.css`.
+
+The browser tab icon is `app/icon.png`, cropped from the bottom half of
+`public/images/mark-guerdithe-silhouette.jpg`.
 
 ## Invitation List
 

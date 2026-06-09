@@ -444,7 +444,6 @@ h3,
 }
 
 .section-heading h2,
-.registry-card h2,
 .reply-card h2 {
   margin-bottom: 0.8rem;
   font-size: clamp(3rem, 13vw, 5.2rem);
@@ -453,7 +452,6 @@ h3,
 }
 
 .section-heading > p:last-child,
-.registry-card > p:last-child,
 .reply-card > p {
   color: var(--soft-ink);
   font-family: var(--serif);
@@ -499,34 +497,15 @@ h3,
   color: var(--soft-ink);
 }
 
-.registry-section {
-  background:
-    radial-gradient(
-      circle at 10% 20%,
-      rgba(216, 198, 165, 0.12),
-      transparent 19rem
-    ),
-    var(--navy);
-  color: var(--paper);
-}
-
-.registry-card,
-.reply-card {
-  width: min(680px, 100%);
-  margin: 0 auto;
-  text-align: center;
-}
-
-.registry-card > p:last-child {
-  color: rgba(255, 250, 240, 0.74);
-}
-
 .reply-section {
   position: relative;
   background: var(--cream);
 }
 
 .reply-card {
+  width: min(680px, 100%);
+  margin: 0 auto;
+  text-align: center;
   border: 1px solid var(--gold);
   background: var(--paper);
   padding: clamp(3rem, 10vw, 5rem) 1.5rem;
