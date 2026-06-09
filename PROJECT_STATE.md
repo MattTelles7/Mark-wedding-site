@@ -18,6 +18,8 @@
   the formal invitation.
 - Local and isolated test environments can use the documented `admin`
   password. Fresh VM installs replace it with a generated password.
+- The feature is deployed at `/opt/wedding-rsvp-photo` on the Debian 13 test
+  VM and is reachable at `http://192.168.50.194:3000`.
 - Branch-aware Docker and VM install/update files remain present.
 
 ## Last Completed Feature
@@ -37,10 +39,7 @@ placeholders.
 
 ## Pending Validation
 
-- Deploy this feature branch to the Debian 13 test VM and confirm that the
-  additive migration preserves the existing SQLite file and legacy rows.
-- Confirm household/guest data persists through a container restart, rebuild,
-  and VM reboot.
+- Confirm household/guest data persists through a VM reboot.
 - Test household and invited-person deletion through a real browser.
 - Confirm admin logout through a real browser.
 - Test a branch-aware fresh install on a second clean Ubuntu or Debian VM.
@@ -62,6 +61,8 @@ placeholders.
 - Existing `.env`, `data`, and `data/app.db` are preserved.
 - Fresh installs replace the example admin password and print the generated
   password once; updates do not replace existing credentials.
+- `SESSION_COOKIE_SECURE=false` supports isolated HTTP testing. Public HTTPS
+  deployments must set it to `true`.
 
 ## Important Commands
 
@@ -136,7 +137,7 @@ responses.
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
 - Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`
   behind a trusted proxy with direct VM traffic restricted.
-- On June 8, 2026, formatting, linting, type checking, 23 tests, shell syntax,
+- On June 9, 2026, formatting, linting, type checking, 25 tests, shell syntax,
   and the production build passed locally.
 - On June 8, 2026, the homepage was inspected at desktop and 390px widths with
   no horizontal overflow. The isolated browser test covered closed RSVPs,
@@ -145,3 +146,8 @@ responses.
   counts, admin unlock, and admin response editing.
 - The in-app browser reached the protected CSV download route but cannot retain
   downloads; CSV content and formula escaping are covered by unit tests.
+- On June 9, 2026, the feature branch Docker image built and ran healthy on the
+  Debian 13 VM. Browser checks confirmed the supplied photos, `admin` login,
+  persistent admin sessions over isolated HTTP, the RSVP open/close control,
+  and preservation of the existing SQLite file and legacy response through
+  container rebuilds.

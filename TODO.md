@@ -23,8 +23,10 @@
 - [ ] Import the real invitation household and guest list.
 - [ ] Test household and invited-person deletion through a real browser.
 - [ ] Confirm admin logout through a real browser.
-- [ ] Deploy this feature to the Debian 13 VM and confirm migration and
-      household data persistence through restart, rebuild, and reboot.
+- [x] Deploy this feature to the Debian 13 VM and confirm health, admin login,
+      the RSVP availability control, and legacy data preservation through
+      container rebuilds.
+- [ ] Confirm household and invited-person data persists through a VM reboot.
 - [ ] Test a branch-aware fresh install on a clean Ubuntu or Debian VM.
 - [ ] Test switching a VM from `develop` to `main` after a manual release.
 - [ ] Configure VM firewall, Cloudflare, DNS, TLS, and backups.

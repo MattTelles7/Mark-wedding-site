@@ -47,3 +47,5 @@ All notable changes to this project are documented here.
 - Updates now refuse dirty/diverged Git state or deployment layouts that could
   bypass the persistent data mount
 - Docker healthchecks now use `/api/health`
+- Local and isolated test environments use a portable SQLite path and can keep
+  admin sessions over HTTP; public HTTPS deployments can require secure cookies
