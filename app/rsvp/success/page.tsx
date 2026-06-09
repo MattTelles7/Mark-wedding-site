@@ -25,8 +25,8 @@ export default function RsvpSuccessPage() {
         <p className="eyebrow">{site.shortDate}</p>
         <h1>Thank you</h1>
         <p>
-          Your RSVP has been saved. We appreciate your reply and look forward to
-          celebrating together.
+          Your household RSVP has been saved and is now final. Please contact
+          the host if anything needs to be changed.
         </p>
         <Link className="button button-secondary" href="/">
           Return to the wedding site

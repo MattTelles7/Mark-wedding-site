@@ -46,6 +46,13 @@ The admin password is printed only when the installer generates a new value.
 The installer never runs `docker compose down -v`, removes Docker volumes,
 deletes `data/app.db`, or replaces an existing `.env`.
 
+Keep `SESSION_COOKIE_SECURE=false` while accessing an isolated test VM over
+plain HTTP. Set it to `true` before serving the public site over HTTPS; otherwise
+the browser will not send the admin session cookie securely.
+
+Database schema migrations run automatically when the app starts. They are
+additive and preserve the original `rsvps` table and rows.
+
 When `/opt/wedding-rsvp` is an older non-Git installation, the installer moves
 the previous app files to `/opt/wedding-rsvp.pre-git-<timestamp>`, creates a Git
 checkout, and moves the existing `.env` and `data` directory into it.
@@ -96,7 +103,8 @@ sudo docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' wedding-rsvp
 
 ## Reboot and Persistence Test
 
-1. Submit a recognizable RSVP and confirm it appears in `/admin`.
+1. Add a recognizable household in `/admin`, open RSVPs, submit its response,
+   and confirm the household is locked.
 2. Confirm the database exists:
 
    ```bash
@@ -113,7 +121,8 @@ sudo docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' wedding-rsvp
    curl http://localhost:3000/api/health
    ```
 
-4. Confirm the RSVP still appears in `/admin`.
+4. Confirm the household, invited people, responses, and lock still appear in
+   `/admin`.
 5. Reboot with `sudo reboot`, reconnect, and run:
 
    ```bash
@@ -123,7 +132,7 @@ sudo docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' wedding-rsvp
    sudo test -f data/app.db
    ```
 
-6. Confirm the same RSVP still appears in `/admin`.
+6. Confirm the same household RSVP still appears in `/admin`.
 
 ## Backup
 
