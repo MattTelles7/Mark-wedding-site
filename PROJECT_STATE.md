@@ -141,6 +141,8 @@ responses.
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
 - Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`
   behind a trusted proxy with direct VM traffic restricted.
+- GitHub Actions uses `actions/checkout@v6` and `actions/setup-node@v6`, whose
+  action runtime is Node.js 24.
 - On June 9, 2026, formatting, linting, type checking, 25 tests, shell syntax,
   and the production build passed locally.
 - On June 8, 2026, the homepage was inspected at desktop and 390px widths with
