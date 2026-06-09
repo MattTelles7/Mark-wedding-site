@@ -4,7 +4,7 @@
 
 - `develop` remains the active integration branch.
 - `develop` contains the completed invitation, household RSVP, content, photo,
-  admin-session, and VM-test work.
+  admin-session, VM-test, reception-details, registry-removal, and favicon work.
 - Completed feature branches have been removed after integration into
   `develop`.
 - The homepage now uses confirmed Mark & Guerdithe wedding information with a
@@ -24,6 +24,12 @@
   legacy responses in the admin dashboard.
 - The supplied engagement photos now appear in the responsive hero and beside
   the formal invitation.
+- Reception details are confirmed and displayed: Knights of Columbus Hall,
+  333 Main Street, Brookville, IN 47012, directly following Mass.
+- The registry section and nav link have been removed entirely. There is no
+  registry.
+- Browser tab favicon (`app/icon.png`) is a square crop from the bottom half
+  of `mark-guerdithe-silhouette.jpg`.
 - Local and isolated test environments can use the documented `admin`
   password. Fresh VM installs replace it with a generated password.
 - The feature is deployed at `/opt/wedding-rsvp-photo` on the Debian 13 test
@@ -32,19 +38,15 @@
 
 ## Last Completed Feature
 
-Wedding content and supplied photography, responsive invitation design, live
-countdown, plus the household-based RSVP system and blur-autosaving admin
-management experience.
+Reception details confirmed, registry removed, favicon added from couple
+silhouette photo.
 
 ## Known Missing Content
 
 - Ceremony address
-- Reception time and location
-- Registry links/details
 
-The site intentionally hides the unknown ceremony address and shows only the
-approved “Reception details to follow” and “Registry details coming soon.”
-placeholders.
+The ceremony address remains unknown and is intentionally hidden. All other
+wedding details (reception venue, timing) are now confirmed and displayed.
 
 ## Pending Validation
 
@@ -179,3 +181,12 @@ responses.
   persistent admin sessions over isolated HTTP, the RSVP open/close control,
   and preservation of the existing SQLite file and legacy response through
   container rebuilds.
+- Reception details are confirmed and hardcoded in `lib/site.ts`: Knights of
+  Columbus Hall, 333 Main Street, Brookville, IN 47012, directly following
+  Mass. These are not environment-variable-driven because they are fixed facts.
+- There is no registry. The registry section, nav link, and all registry copy
+  have been permanently removed. Do not add a registry section or wording.
+- The browser tab favicon is `app/icon.png` (512×512), an Apple touch icon is
+  `app/apple-icon.png` (180×180). Both are square crops from the bottom half of
+  `mark-guerdithe-silhouette.jpg`. Next.js App Router auto-generates the
+  `<link rel="icon">` metadata from these files.

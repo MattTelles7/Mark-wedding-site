@@ -17,7 +17,6 @@ export default function HomePage() {
           </Link>
           <div className="nav-links">
             <a href="#details">Details</a>
-            <a href="#registry">Registry</a>
             <Link href="/rsvp">RSVP</Link>
           </div>
         </nav>
@@ -122,20 +121,13 @@ export default function HomePage() {
             </div>
           </article>
           <article className="event-card">
-            <p className="event-time">Following</p>
+            <p className="event-time">{site.reception.timing}</p>
             <div>
               <h3>Reception</h3>
-              <p className="muted">{site.reception.message}</p>
+              <p>{site.reception.venue}</p>
+              <p className="muted">{site.reception.address}</p>
             </div>
           </article>
-        </div>
-      </section>
-
-      <section className="section registry-section" id="registry">
-        <div className="registry-card">
-          <p className="eyebrow">With gratitude</p>
-          <h2>Registry</h2>
-          <p>{site.registryMessage}</p>
         </div>
       </section>
 

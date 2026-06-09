@@ -6,6 +6,23 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Confirmed reception details: Knights of Columbus Hall, 333 Main Street,
+  Brookville, IN 47012, directly following Mass — displayed on the homepage
+  schedule and event card
+- Browser tab favicon (`app/icon.png`, 512×512) and Apple touch icon
+  (`app/apple-icon.png`, 180×180) cropped from the bottom half of the
+  couple silhouette engagement photo
+
+### Removed
+
+- Registry section and nav link removed entirely; there is no registry for
+  this wedding
+
+### Changed
+
+- Reception event card now shows venue, address, and timing instead of the
+  former placeholder
+
 - Custom navy/cream invitation-inspired homepage for Mark & Guerdithe
 - Confirmed hosts, formal invitation wording, wedding date, ceremony time and
   venue, and RSVP deadline
