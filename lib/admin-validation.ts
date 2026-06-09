@@ -37,6 +37,8 @@ export type HouseholdNameDraft = {
   householdNameManuallyEdited: boolean;
 };
 
+let guestDraftSequence = 0;
+
 function normalizeText(value: unknown): string {
   return String(value ?? "").trim();
 }
@@ -101,6 +103,11 @@ export function householdStatusLabel(isLocked: boolean): string {
 
 export function householdStatusActionLabel(isLocked: boolean): string {
   return isLocked ? "Reopen for Submission" : "Mark as Submitted and Closed";
+}
+
+export function nextGuestDraftKey(): string {
+  guestDraftSequence += 1;
+  return `guest-draft-${guestDraftSequence}`;
 }
 
 export function mergeSavedFields<T extends Record<string, string>>(

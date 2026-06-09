@@ -4,6 +4,7 @@ import {
   householdStatusActionLabel,
   householdStatusLabel,
   mergeSavedFields,
+  nextGuestDraftKey,
   updateHouseholdLastName,
   updateHouseholdName,
   validateInvitedGuest,
@@ -121,5 +122,13 @@ describe("admin household validation", () => {
       },
       hasNewerChanges: true,
     });
+  });
+
+  it("creates temporary guest keys without secure-context browser APIs", () => {
+    const first = nextGuestDraftKey();
+    const second = nextGuestDraftKey();
+
+    expect(first).toMatch(/^guest-draft-\d+$/);
+    expect(second).not.toBe(first);
   });
 });
