@@ -4,7 +4,8 @@
 
 - `develop` remains the active integration branch.
 - `develop` contains the completed invitation, household RSVP, content, photo,
-  admin-session, VM-test, reception-details, registry-removal, and favicon work.
+  admin-session, VM-test, reception-details, registry-removal, favicon, and
+  ceremony-address work.
 - Completed feature branches have been removed after integration into
   `develop`.
 - The homepage now uses confirmed Mark & Guerdithe wedding information with a
@@ -38,15 +39,14 @@
 
 ## Last Completed Feature
 
-Reception details confirmed, registry removed, favicon added from couple
-silhouette photo.
+Confirmed ceremony address added: St. Joseph's Catholic Church,
+7536 Church Ln, West Harrison, IN 47060.
 
 ## Known Missing Content
 
-- Ceremony address
-
-The ceremony address remains unknown and is intentionally hidden. All other
-wedding details (reception venue, timing) are now confirmed and displayed.
+All ceremony and reception details are now confirmed and displayed. No content
+is intentionally hidden or placeholder. The only remaining pre-launch work is
+importing the real invitation household/guest list and completing VM validation.
 
 ## Pending Validation
 
@@ -184,6 +184,9 @@ responses.
 - Reception details are confirmed and hardcoded in `lib/site.ts`: Knights of
   Columbus Hall, 333 Main Street, Brookville, IN 47012, directly following
   Mass. These are not environment-variable-driven because they are fixed facts.
+- Ceremony address is confirmed: St. Joseph's Catholic Church,
+  7536 Church Ln, West Harrison, IN 47060. Defaulted in `lib/site.ts` via
+  `CEREMONY_ADDRESS` env var.
 - There is no registry. The registry section, nav link, and all registry copy
   have been permanently removed. Do not add a registry section or wording.
 - The browser tab favicon is `app/icon.png` (512×512), an Apple touch icon is

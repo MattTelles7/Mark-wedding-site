@@ -24,7 +24,7 @@
 - [x] Submit and verify a mixed attending/declined household RSVP.
 - [x] Confirm admin login, household creation, public locking, admin unlocking,
       and admin response editing through a real browser.
-- [ ] Add the confirmed ceremony address.
+- [x] Add the confirmed ceremony address.
 - [x] Add confirmed reception time and location.
 - [x] Remove registry section, nav link, and all registry wording.
 - [x] Add favicon and Apple touch icon from couple photo.
