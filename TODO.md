@@ -2,12 +2,11 @@
 
 ## Before First Release
 
-- [x] Replace temporary sample names, date, story, wedding party, travel, FAQ,
-      hotel, venue, and address content.
+- [x] Remove all unapproved template content and placeholder personal data.
 - [x] Add confirmed names, hosts, wedding date, RSVP deadline, ceremony time,
       and ceremony name.
 - [x] Add a live wedding countdown with wedding-day and post-event states.
-- [x] Add replaceable hero and portrait photo placeholders.
+- [x] Add the supplied hero and portrait photography.
 - [x] Replace free-form RSVPs with household and individual invited-person
       responses.
 - [x] Add admin RSVP open/closed control stored in SQLite.
@@ -21,7 +20,6 @@
 - [ ] Add the confirmed ceremony address.
 - [ ] Add confirmed reception time and location.
 - [ ] Add confirmed registry links/details.
-- [ ] Replace the three photo placeholders with final images.
 - [ ] Import the real invitation household and guest list.
 - [ ] Test household and invited-person deletion through a real browser.
 - [ ] Confirm admin logout through a real browser.

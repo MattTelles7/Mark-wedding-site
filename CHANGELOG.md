@@ -9,7 +9,7 @@ All notable changes to this project are documented here.
 - Custom navy/cream invitation-inspired homepage for Mark & Guerdithe
 - Confirmed hosts, formal invitation wording, wedding date, ceremony time and
   venue, and RSVP deadline
-- One large and two small replaceable decorative photo placeholders
+- Three supplied engagement photos with responsive hero and invitation layouts
 - Hydration-safe live countdown with wedding-day minutes and post-event state
 - Reduced-motion-aware CSS reveals for homepage copy and photo cards
 - Additive SQLite migration with `settings`, `households`, and
@@ -39,8 +39,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
-- Removed temporary Lilly & Christopher, story, wedding party, travel, hotel,
-  FAQ, meal, address, and reception content
+- Removed all temporary template sections and unapproved personal details
 - New public responses now use invited households; legacy free-form responses
   remain preserved and read-only in the admin dashboard
 - Installer reruns now preserve `.env`, `data`, and `data/app.db` while safely

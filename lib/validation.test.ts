@@ -11,7 +11,7 @@ function validForm() {
   formData.set("attending", "yes");
   formData.set("guestCount", "2");
   formData.set("mealChoice", "vegetarian");
-  formData.set("songRequest", "September");
+  formData.set("songRequest", "At Last");
   formData.set("message", "Looking forward to it!");
   return formData;
 }
