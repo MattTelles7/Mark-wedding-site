@@ -16,6 +16,7 @@ import {
   householdStatusActionLabel,
   householdStatusLabel,
   mergeSavedFields,
+  nextGuestDraftKey,
   updateHouseholdLastName,
   updateHouseholdName,
   validateHouseholdDetails,
@@ -81,7 +82,7 @@ function FieldError({ message }: { message?: string }) {
   return message ? <span className="admin-field-error">{message}</span> : null;
 }
 
-function newGuestDraft(lastName = "", key = crypto.randomUUID()): GuestDraft {
+function newGuestDraft(lastName = "", key = nextGuestDraftKey()): GuestDraft {
   return {
     key,
     firstName: "",
