@@ -1,25 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Countdown } from "@/app/countdown";
 import { getSiteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
-
-function PhotoPlaceholder({
-  className,
-  label,
-}: {
-  className: string;
-  label: string;
-}) {
-  return (
-    <div className={`photo-placeholder ${className}`} aria-label={label}>
-      <div className="photo-placeholder-inner">
-        <span className="photo-mark">M&G</span>
-        <span>{label}</span>
-      </div>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const site = getSiteConfig();
@@ -56,9 +40,13 @@ export default function HomePage() {
           </div>
 
           <div className="hero-photo-wrap">
-            <PhotoPlaceholder
-              className="hero-photo-card"
-              label="Celebration photo coming soon"
+            <Image
+              className="hero-photo"
+              src="/images/mark-guerdithe-hero.jpg"
+              alt="Mark and Guerdithe sharing a quiet moment"
+              fill
+              priority
+              sizes="(max-width: 679px) 100vw, (max-width: 1199px) 52vw, 680px"
             />
           </div>
         </div>
@@ -71,37 +59,47 @@ export default function HomePage() {
       </section>
 
       <section className="invitation-card-section" aria-label="Invitation">
-        <article className="formal-invitation">
-          <p className="invitation-hosts">{site.hostNames}</p>
-          <p>request the honor of your presence</p>
-          <p>at the nuptial Mass uniting</p>
-          <h2>
-            <span>{site.fullNames.first}</span>
-            <small>and</small>
-            <span>{site.fullNames.second}</span>
-          </h2>
-          <div className="invitation-rule" aria-hidden="true">
-            <span />
-            <b>{site.monogram}</b>
-            <span />
-          </div>
-          <p className="invitation-date">{site.weddingDate}</p>
-          <p>
-            at {site.ceremony.time}
-            <br />
-            {site.ceremony.venue}
-          </p>
-        </article>
+        <div className="invitation-layout">
+          <article className="formal-invitation">
+            <p className="invitation-hosts">{site.hostNames}</p>
+            <p>request the honor of your presence</p>
+            <p>at the nuptial Mass uniting</p>
+            <h2>
+              <span>{site.fullNames.first}</span>
+              <small>and</small>
+              <span>{site.fullNames.second}</span>
+            </h2>
+            <div className="invitation-rule" aria-hidden="true">
+              <span />
+              <b>{site.monogram}</b>
+              <span />
+            </div>
+            <p className="invitation-date">{site.weddingDate}</p>
+            <p>
+              at {site.ceremony.time}
+              <br />
+              {site.ceremony.venue}
+            </p>
+          </article>
 
-        <div className="portrait-pair" aria-label="Photo placeholders">
-          <PhotoPlaceholder
-            className="portrait-card portrait-card-left"
-            label="Portrait photo coming soon"
-          />
-          <PhotoPlaceholder
-            className="portrait-card portrait-card-right"
-            label="Portrait photo coming soon"
-          />
+          <div className="portrait-pair" aria-label="Mark and Guerdithe">
+            <figure className="portrait-card portrait-card-left">
+              <Image
+                src="/images/mark-guerdithe-silhouette.jpg"
+                alt="Mark and Guerdithe silhouetted beneath a tree"
+                fill
+                sizes="(max-width: 679px) 88vw, (max-width: 999px) 42vw, 260px"
+              />
+            </figure>
+            <figure className="portrait-card portrait-card-right">
+              <Image
+                src="/images/mark-guerdithe-portrait.jpg"
+                alt="Mark kissing Guerdithe on the forehead"
+                fill
+                sizes="(max-width: 679px) 88vw, (max-width: 999px) 42vw, 260px"
+              />
+            </figure>
+          </div>
         </div>
       </section>
 
