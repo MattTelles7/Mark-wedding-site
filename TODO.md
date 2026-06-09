@@ -25,8 +25,9 @@
 - [x] Confirm admin login, household creation, public locking, admin unlocking,
       and admin response editing through a real browser.
 - [ ] Add the confirmed ceremony address.
-- [ ] Add confirmed reception time and location.
-- [ ] Add confirmed registry links/details.
+- [x] Add confirmed reception time and location.
+- [x] Remove registry section, nav link, and all registry wording.
+- [x] Add favicon and Apple touch icon from couple photo.
 - [ ] Import the real invitation household and guest list.
 - [ ] Test household and invited-person deletion through a real browser.
 - [ ] Confirm admin logout through a real browser.
