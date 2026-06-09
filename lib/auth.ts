@@ -31,7 +31,7 @@ function sign(expiresAt: string) {
 
 export function verifyAdminPassword(candidate: string) {
   const configuredPassword = process.env.ADMIN_PASSWORD;
-  if (!configuredPassword || configuredPassword.length < 12) {
+  if (!configuredPassword) {
     return false;
   }
 

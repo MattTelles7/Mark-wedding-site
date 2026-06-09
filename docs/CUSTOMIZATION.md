@@ -33,11 +33,10 @@ The following items intentionally remain placeholders:
 
 - Reception: “Reception details to follow”
 - Registry: “Registry details coming soon.”
-- One hero photo and two portrait photos
 
 Update the reception and registry copy in `lib/site.ts` after details are
-confirmed. The photo placeholder structure is in `app/page.tsx`, with its
-presentation in `app/globals.css`.
+confirmed. The current photos are stored in `public/images`, referenced from
+`app/page.tsx`, and presented by `app/globals.css`.
 
 ## Invitation List
 

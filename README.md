@@ -36,7 +36,13 @@ Do not use `main` as the active development branch.
    cp .env.example .env
    ```
 
-2. Set a strong `ADMIN_PASSWORD` and `SESSION_SECRET`.
+2. Review the two admin settings:
+   - `ADMIN_PASSWORD` is the password entered at `/admin`. The example value
+     `admin` is for local and isolated test environments only. Change it before
+     making the site publicly reachable.
+   - `SESSION_SECRET` signs the admin login cookie. It is not the login
+     password. Set it to a private random value of at least 32 characters.
+
 3. Install dependencies and start the development server:
 
    ```bash
@@ -101,6 +107,10 @@ Re-running the same one-liner:
 - preserves `/opt/wedding-rsvp/.env`
 - preserves `/opt/wedding-rsvp/data` and `data/app.db`
 - generates missing admin/session secrets without replacing existing values
+
+On a fresh VM install, the installer replaces the example `admin` password
+with a generated password and prints it once. Store it when shown. Existing
+`.env` values are never replaced during an update.
 
 To switch a test VM from `develop` to `main`, run the main one-liner after the
 desired release has been merged to `main`. No VM reset is required.

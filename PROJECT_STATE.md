@@ -3,8 +3,8 @@
 ## Current Status
 
 - `develop` remains the active integration branch.
-- Invitation redesign work is on `feature/invitation-redesign` and has not been
-  merged into `develop` or `main`.
+- Content and photography polish is on `feature/site-content-photo-polish` and
+  has not been merged into `develop` or `main`.
 - The homepage now uses confirmed Mark & Guerdithe wedding information with a
   custom navy/cream invitation design.
 - The public RSVP flow uses admin-created households and individual invited
@@ -14,19 +14,22 @@
   household/guest CSV data.
 - The original `rsvps` table and any existing rows are preserved as read-only
   legacy responses in the admin dashboard.
+- The supplied engagement photos now appear in the responsive hero and beside
+  the formal invitation.
+- Local and isolated test environments can use the documented `admin`
+  password. Fresh VM installs replace it with a generated password.
 - Branch-aware Docker and VM install/update files remain present.
 
 ## Last Completed Feature
 
-Invitation-inspired wedding content and design, live countdown and photo-card
-reveals, plus the household-based RSVP and admin management system.
+Wedding content and supplied photography, responsive invitation design, live
+countdown, plus the household-based RSVP and admin management system.
 
 ## Known Missing Content
 
 - Ceremony address
 - Reception time and location
 - Registry links/details
-- Hero and portrait photos
 
 The site intentionally hides the unknown ceremony address and shows only the
 approved “Reception details to follow” and “Registry details coming soon.”
@@ -57,6 +60,8 @@ placeholders.
 - Re-running `install.sh --branch develop|main` installs or safely updates.
 - `update.sh` defaults to the current branch and accepts the same branch flag.
 - Existing `.env`, `data`, and `data/app.db` are preserved.
+- Fresh installs replace the example admin password and print the generated
+  password once; updates do not replace existing credentials.
 
 ## Important Commands
 

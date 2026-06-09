@@ -279,8 +279,10 @@ assert_safe_deployment_layout
 "${SUDO[@]}" chown -R 1001:1001 "$INSTALL_DIR/data"
 
 ENV_FILE="$INSTALL_DIR/.env"
+ENV_CREATED=false
 if [[ ! -f "$ENV_FILE" ]]; then
   "${SUDO[@]}" install -m 600 "$INSTALL_DIR/.env.example" "$ENV_FILE"
+  ENV_CREATED=true
 fi
 "${SUDO[@]}" chmod 600 "$ENV_FILE"
 
@@ -304,7 +306,9 @@ set_env_value() {
 }
 
 GENERATED_ADMIN_PASSWORD=""
-if [[ -z "$(read_env_value "ADMIN_PASSWORD")" ]]; then
+ADMIN_PASSWORD_VALUE="$(read_env_value "ADMIN_PASSWORD")"
+if [[ -z "$ADMIN_PASSWORD_VALUE" \
+  || ( "$ENV_CREATED" == "true" && "$ADMIN_PASSWORD_VALUE" == "admin" ) ]]; then
   GENERATED_ADMIN_PASSWORD="$(openssl rand -hex 16)"
   set_env_value "ADMIN_PASSWORD" "$GENERATED_ADMIN_PASSWORD"
 fi
