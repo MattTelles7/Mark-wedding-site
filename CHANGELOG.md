@@ -20,6 +20,11 @@ All notable changes to this project are documented here.
 - Database-backed RSVP open/closed control
 - Admin household and invited-person creation, editing, filtering, locking,
   unlocking, response editing, and confirmed deletion controls
+- Atomic household creation that requires at least one invited person
+- Blur-based SQLite autosave for household fields, invited people, statuses,
+  and admin notes with visible saving, saved, and failure feedback
+- Inline admin validation, household-name suggestions, and invited-person
+  surname defaults
 - Six household/guest dashboard counts and individual-level CSV export
 - Migration, household workflow, validation, countdown, and CSV regression
   tests
@@ -52,3 +57,7 @@ All notable changes to this project are documented here.
 - Completed work now requires a passing pull request into `develop`, followed
   by local and remote branch cleanup
 - GitHub Actions now uses the Node.js 24-based checkout and setup-node actions
+- Admin terminology now uses `Last Name`, `Open for Submission`, and
+  `Submitted and Closed`, with matching reopen/close actions
+- The admin prevents empty household shells and protects the final invited
+  person from separate deletion

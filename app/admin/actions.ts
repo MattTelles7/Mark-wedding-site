@@ -7,20 +7,31 @@ import {
   createAdminSession,
   requireAdmin,
   verifyAdminPassword,
-} from "@/lib/auth";
+} from "../../lib/auth";
 import {
+  createHouseholdWithGuests,
   createGuest,
-  createHousehold,
   deleteGuest,
   deleteHousehold,
   setHouseholdLocked,
   setRsvpsOpen,
   updateGuest,
   updateHousehold,
-  type GuestStatus,
-} from "@/lib/database";
-import { rateLimit } from "@/lib/rate-limit";
-import { getRequestIp } from "@/lib/request";
+} from "../../lib/database";
+import {
+  createAdminGuest,
+  createAdminHousehold,
+  saveAdminGuest,
+  saveAdminHousehold,
+  type AdminMutationResult,
+} from "../../lib/admin-service";
+import type {
+  AdminGuestInput,
+  AdminHouseholdCreationInput,
+  AdminHouseholdDetailsInput,
+} from "../../lib/admin-validation";
+import { rateLimit } from "../../lib/rate-limit";
+import { getRequestIp } from "../../lib/request";
 
 export type LoginFormState = {
   message?: string;
@@ -30,24 +41,30 @@ function text(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
 }
 
-function positiveId(formData: FormData, name: string) {
-  const id = Number(text(formData, name));
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
-
-function validLength(value: string, minimum: number, maximum: number) {
-  return value.length >= minimum && value.length <= maximum;
-}
-
-function guestStatus(value: string): GuestStatus | null {
-  return ["pending", "attending", "declined"].includes(value)
-    ? (value as GuestStatus)
-    : null;
-}
-
 function revalidateRsvpViews() {
   revalidatePath("/admin");
   revalidatePath("/rsvp");
+}
+
+const adminRepository = {
+  createHouseholdWithGuests,
+  updateHousehold,
+  createGuest,
+  updateGuest,
+};
+
+function invalidIdResult<T = undefined>(): AdminMutationResult<T> {
+  return { success: false, message: "This item could not be found." };
+}
+
+function mutationFailure<T = undefined>(
+  error: unknown,
+): AdminMutationResult<T> {
+  console.error("Admin RSVP mutation failed", error);
+  return {
+    success: false,
+    message: "Not saved. Check the information and try again.",
+  };
 }
 
 export async function login(
@@ -87,133 +104,161 @@ export async function toggleRsvps(formData: FormData) {
   revalidateRsvpViews();
 }
 
-export async function addHousehold(formData: FormData) {
+export async function createHouseholdAction(
+  input: AdminHouseholdCreationInput,
+): Promise<AdminMutationResult<{ householdId: number }>> {
   await requireAdmin();
 
-  const householdName = text(formData, "householdName");
-  const searchLastName = text(formData, "searchLastName");
-  const contactEmail = text(formData, "contactEmail");
-  const contactPhone = text(formData, "contactPhone");
-
-  if (
-    !validLength(householdName, 2, 120) ||
-    !validLength(searchLastName, 2, 80) ||
-    contactEmail.length > 180 ||
-    contactPhone.length > 40
-  ) {
-    return;
+  try {
+    const result = createAdminHousehold(adminRepository, input);
+    if (result.success) {
+      revalidateRsvpViews();
+    }
+    return result;
+  } catch (error) {
+    return mutationFailure(error);
   }
-
-  createHousehold({
-    householdName,
-    searchLastName,
-    contactEmail,
-    contactPhone,
-  });
-  revalidateRsvpViews();
 }
 
-export async function editHousehold(formData: FormData) {
+export async function autosaveHouseholdAction(
+  input: AdminHouseholdDetailsInput & { id: number },
+): Promise<
+  AdminMutationResult<{
+    searchLastName: string;
+    householdName: string;
+    contactEmail: string;
+    contactPhone: string;
+  }>
+> {
   await requireAdmin();
 
-  const id = positiveId(formData, "householdId");
-  const householdName = text(formData, "householdName");
-  const searchLastName = text(formData, "searchLastName");
-  const contactEmail = text(formData, "contactEmail");
-  const contactPhone = text(formData, "contactPhone");
-
-  if (
-    !id ||
-    !validLength(householdName, 2, 120) ||
-    !validLength(searchLastName, 2, 80) ||
-    contactEmail.length > 180 ||
-    contactPhone.length > 40
-  ) {
-    return;
+  if (!Number.isSafeInteger(input.id) || input.id <= 0) {
+    return invalidIdResult();
   }
 
-  updateHousehold(id, {
-    householdName,
-    searchLastName,
-    contactEmail,
-    contactPhone,
-  });
-  revalidateRsvpViews();
+  try {
+    const result = saveAdminHousehold(adminRepository, input);
+    if (result.success) {
+      revalidateRsvpViews();
+    }
+    return result;
+  } catch (error) {
+    return mutationFailure(error);
+  }
 }
 
-export async function removeHousehold(formData: FormData) {
+export async function removeHouseholdAction(
+  householdId: number,
+): Promise<AdminMutationResult> {
   await requireAdmin();
-  const id = positiveId(formData, "householdId");
-  if (!id) {
-    return;
+  if (!Number.isSafeInteger(householdId) || householdId <= 0) {
+    return invalidIdResult();
   }
 
-  deleteHousehold(id);
-  revalidateRsvpViews();
+  try {
+    deleteHousehold(householdId);
+    revalidateRsvpViews();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return mutationFailure(error);
+  }
 }
 
-export async function addInvitedGuest(formData: FormData) {
+export async function createGuestAction(
+  householdId: number,
+  input: AdminGuestInput,
+): Promise<
+  AdminMutationResult<{
+    guestId: number;
+    firstName: string;
+    lastName: string;
+    status: "pending" | "attending" | "declined";
+    notes: string;
+  }>
+> {
   await requireAdmin();
 
-  const householdId = positiveId(formData, "householdId");
-  const firstName = text(formData, "firstName");
-  const lastName = text(formData, "lastName");
-  const notes = text(formData, "notes");
-
-  if (
-    !householdId ||
-    !validLength(firstName, 1, 80) ||
-    !validLength(lastName, 1, 80) ||
-    notes.length > 500
-  ) {
-    return;
+  if (!Number.isSafeInteger(householdId) || householdId <= 0) {
+    return invalidIdResult();
   }
 
-  createGuest(householdId, { firstName, lastName, notes });
-  revalidateRsvpViews();
+  try {
+    const result = createAdminGuest(adminRepository, householdId, input);
+    if (result.success) {
+      revalidateRsvpViews();
+    }
+    return result;
+  } catch (error) {
+    return mutationFailure(error);
+  }
 }
 
-export async function editInvitedGuest(formData: FormData) {
+export async function autosaveGuestAction(
+  guestId: number,
+  input: AdminGuestInput,
+): Promise<
+  AdminMutationResult<{
+    firstName: string;
+    lastName: string;
+    status: "pending" | "attending" | "declined";
+    notes: string;
+  }>
+> {
   await requireAdmin();
 
-  const guestId = positiveId(formData, "guestId");
-  const firstName = text(formData, "firstName");
-  const lastName = text(formData, "lastName");
-  const status = guestStatus(text(formData, "status"));
-  const notes = text(formData, "notes");
-
-  if (
-    !guestId ||
-    !status ||
-    !validLength(firstName, 1, 80) ||
-    !validLength(lastName, 1, 80) ||
-    notes.length > 500
-  ) {
-    return;
+  if (!Number.isSafeInteger(guestId) || guestId <= 0) {
+    return invalidIdResult();
   }
 
-  updateGuest(guestId, { firstName, lastName, status, notes });
-  revalidateRsvpViews();
+  try {
+    const result = saveAdminGuest(adminRepository, guestId, input);
+    if (result.success) {
+      revalidateRsvpViews();
+    }
+    return result;
+  } catch (error) {
+    return mutationFailure(error);
+  }
 }
 
-export async function removeInvitedGuest(formData: FormData) {
+export async function removeGuestAction(
+  guestId: number,
+): Promise<AdminMutationResult> {
   await requireAdmin();
-  const guestId = positiveId(formData, "guestId");
-  if (!guestId) {
-    return;
+  if (!Number.isSafeInteger(guestId) || guestId <= 0) {
+    return invalidIdResult();
   }
 
-  deleteGuest(guestId);
-  revalidateRsvpViews();
+  try {
+    const removed = deleteGuest(guestId);
+    if (!removed) {
+      return {
+        success: false,
+        message:
+          "A household must keep at least one invited person. Delete the household instead.",
+      };
+    }
+    revalidateRsvpViews();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return mutationFailure(error);
+  }
 }
 
-export async function changeHouseholdLock(formData: FormData) {
+export async function setHouseholdSubmissionAction(
+  householdId: number,
+  isLocked: boolean,
+): Promise<AdminMutationResult> {
   await requireAdmin();
-  const householdId = positiveId(formData, "householdId");
-  if (!householdId) {
-    return;
+  if (!Number.isSafeInteger(householdId) || householdId <= 0) {
+    return invalidIdResult();
   }
 
-  setHouseholdLocked(householdId, text(formData, "locked") === "true");
-  revalidateRsvpViews();
+  try {
+    setHouseholdLocked(householdId, isLocked);
+    revalidateRsvpViews();
+    return { success: true, data: undefined };
+  } catch (error) {
+    return mutationFailure(error);
+  }
 }

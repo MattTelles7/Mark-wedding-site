@@ -56,7 +56,8 @@ describe("householdRsvpsToCsv", () => {
 
     const csv = householdRsvpsToCsv([row]);
 
-    expect(csv).toContain('"Household","Search Last Name"');
+    expect(csv).toContain('"Household","Last Name"');
+    expect(csv).toContain('"Submitted and Closed"');
     expect(csv).toContain('"The Wolfe Family"');
     expect(csv).toContain('"Mark","Wolfe","attending"');
   });
@@ -80,5 +81,6 @@ describe("householdRsvpsToCsv", () => {
 
     expect(csv).toContain('"\'=cmd"');
     expect(csv).toContain('"\'@formula"');
+    expect(csv).toContain('"Open for Submission"');
   });
 });

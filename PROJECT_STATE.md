@@ -11,9 +11,15 @@
   custom navy/cream invitation design.
 - The public RSVP flow uses admin-created households and individual invited
   people rather than free-form submissions.
-- The admin can open or close RSVPs, manage households and people, edit
-  responses, lock or unlock households, view six summary counts, and export
+- The admin can open or close RSVPs, create households with at least one
+  invited person, autosave household/person fields on blur, edit responses even
+  after submission, reopen households, view six summary counts, and export
   household/guest CSV data.
+- Admin household creation suggests `The [Last Name] Family`, preserves manual
+  household-name edits, prefills new member surnames, validates inline, and
+  prevents empty household shells or deletion of a household's final person.
+- Admin submission labels are `Open for Submission` and
+  `Submitted and Closed`.
 - The original `rsvps` table and any existing rows are preserved as read-only
   legacy responses in the admin dashboard.
 - The supplied engagement photos now appear in the responsive hero and beside
@@ -27,7 +33,8 @@
 ## Last Completed Feature
 
 Wedding content and supplied photography, responsive invitation design, live
-countdown, plus the household-based RSVP and admin management system.
+countdown, plus the household-based RSVP system and blur-autosaving admin
+management experience.
 
 ## Known Missing Content
 
@@ -86,6 +93,9 @@ curl http://localhost:3000/api/health
 - Public pages: `app/`
 - Household RSVP actions: `app/rsvp/actions.ts`
 - Admin actions: `app/admin/actions.ts`
+- Admin household editor: `app/admin/household-manager.tsx`
+- Admin validation and persistence service: `lib/admin-validation.ts`,
+  `lib/admin-service.ts`
 - Database and migrations: `lib/database.ts`
 - Database file in container: `/app/data/app.db`
 - Authentication: `lib/auth.ts`
@@ -136,6 +146,11 @@ responses.
 - Public household confirmation updates every invited person and locks the
   household in one immediate SQLite transaction.
 - Only the admin can edit responses or unlock a submitted household.
+- Admin household and invited-person edits save to SQLite when the field loses
+  focus and display saving, saved, or failure feedback without discarding typed
+  values.
+- A household is created transactionally with at least one invited person, and
+  its final invited person cannot be deleted separately.
 - The app uses signed, eight-hour admin session cookies rather than accounts.
 - Rate limiting is intentionally in-memory for the single-process deployment.
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
@@ -143,8 +158,15 @@ responses.
   behind a trusted proxy with direct VM traffic restricted.
 - GitHub Actions uses `actions/checkout@v6` and `actions/setup-node@v6`, whose
   action runtime is Node.js 24.
-- On June 9, 2026, formatting, linting, type checking, 25 tests, shell syntax,
-  and the production build passed locally.
+- On June 9, 2026, the admin household editor was upgraded to strict
+  validation, atomic household/person creation, and real SQLite autosave on
+  blur without changing the public design.
+- On June 9, 2026, the admin flow was browser-tested at desktop and 390px
+  widths. The checks covered household-name suggestions, inline email errors,
+  atomic creation, dirty/saving/saved feedback, persisted household/status/note
+  edits, failed-save value retention, blank member-row discard, surname
+  prefilling, inline member creation, closed-household admin editing, reopening,
+  and no horizontal overflow.
 - On June 8, 2026, the homepage was inspected at desktop and 390px widths with
   no horizontal overflow. The isolated browser test covered closed RSVPs,
   admin login, opening RSVPs, household/person creation, public household

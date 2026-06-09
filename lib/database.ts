@@ -171,7 +171,7 @@ type GuestRow = {
 };
 
 function normalizeSearchValue(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  return value.trim().replace(/\s+/g, " ");
 }
 
 function mapRsvpRow(row: RsvpRow): RsvpRecord {
@@ -350,6 +350,33 @@ export class WeddingDatabase {
     return Number(result.lastInsertRowid);
   }
 
+  createHouseholdWithGuests(input: {
+    householdName: string;
+    searchLastName: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    guests: Array<{
+      firstName: string;
+      lastName: string;
+      status?: GuestStatus;
+      notes?: string;
+    }>;
+  }) {
+    if (input.guests.length === 0) {
+      throw new Error("A household must include at least one invited person.");
+    }
+
+    return this.db
+      .transaction((transactionInput: typeof input) => {
+        const householdId = this.createHousehold(transactionInput);
+        for (const guest of transactionInput.guests) {
+          this.createGuest(householdId, guest);
+        }
+        return householdId;
+      })
+      .immediate(input);
+  }
+
   updateHousehold(
     id: number,
     input: {
@@ -359,7 +386,7 @@ export class WeddingDatabase {
       contactPhone?: string;
     },
   ) {
-    this.db
+    const result = this.db
       .prepare(
         `
           UPDATE households
@@ -379,6 +406,7 @@ export class WeddingDatabase {
         input.contactPhone?.trim() || null,
         id,
       );
+    return result.changes > 0;
   }
 
   deleteHousehold(id: number) {
@@ -432,7 +460,7 @@ export class WeddingDatabase {
       .get(id) as { household_id: number } | undefined;
 
     if (!existing) {
-      return;
+      return false;
     }
 
     this.db
@@ -457,17 +485,33 @@ export class WeddingDatabase {
       );
 
     this.touchHousehold(existing.household_id);
+    return true;
   }
 
   deleteGuest(id: number) {
-    const existing = this.db
-      .prepare("SELECT household_id FROM invited_guests WHERE id = ?")
-      .get(id) as { household_id: number } | undefined;
+    return this.db
+      .transaction((guestId: number) => {
+        const existing = this.db
+          .prepare("SELECT household_id FROM invited_guests WHERE id = ?")
+          .get(guestId) as { household_id: number } | undefined;
+        if (!existing) {
+          return false;
+        }
 
-    this.db.prepare("DELETE FROM invited_guests WHERE id = ?").run(id);
-    if (existing) {
-      this.touchHousehold(existing.household_id);
-    }
+        const count = this.db
+          .prepare(
+            "SELECT COUNT(*) AS count FROM invited_guests WHERE household_id = ?",
+          )
+          .get(existing.household_id) as { count: number };
+        if (count.count <= 1) {
+          return false;
+        }
+
+        this.db.prepare("DELETE FROM invited_guests WHERE id = ?").run(guestId);
+        this.touchHousehold(existing.household_id);
+        return true;
+      })
+      .immediate(id);
   }
 
   setHouseholdLocked(id: number, isLocked: boolean) {
@@ -787,11 +831,17 @@ export function createHousehold(
   return getProductionDatabase().createHousehold(input);
 }
 
+export function createHouseholdWithGuests(
+  input: Parameters<WeddingDatabase["createHouseholdWithGuests"]>[0],
+) {
+  return getProductionDatabase().createHouseholdWithGuests(input);
+}
+
 export function updateHousehold(
   id: number,
   input: Parameters<WeddingDatabase["updateHousehold"]>[1],
 ) {
-  getProductionDatabase().updateHousehold(id, input);
+  return getProductionDatabase().updateHousehold(id, input);
 }
 
 export function deleteHousehold(id: number) {
@@ -809,11 +859,11 @@ export function updateGuest(
   id: number,
   input: Parameters<WeddingDatabase["updateGuest"]>[1],
 ) {
-  getProductionDatabase().updateGuest(id, input);
+  return getProductionDatabase().updateGuest(id, input);
 }
 
 export function deleteGuest(id: number) {
-  getProductionDatabase().deleteGuest(id);
+  return getProductionDatabase().deleteGuest(id);
 }
 
 export function setHouseholdLocked(id: number, isLocked: boolean) {

@@ -39,10 +39,10 @@ export function rsvpsToCsv(rsvps: RsvpRecord[]) {
 export function householdRsvpsToCsv(rows: HouseholdExportRow[]) {
   const header = [
     "Household",
-    "Search Last Name",
+    "Last Name",
     "Contact Email",
     "Contact Phone",
-    "Household Locked",
+    "Submission Status",
     "Submitted At",
     "Guest First Name",
     "Guest Last Name",
@@ -56,7 +56,7 @@ export function householdRsvpsToCsv(rows: HouseholdExportRow[]) {
     row.searchLastName,
     row.contactEmail,
     row.contactPhone,
-    row.householdLocked ? "Yes" : "No",
+    row.householdLocked ? "Submitted and Closed" : "Open for Submission",
     row.submittedAt,
     row.guestFirstName,
     row.guestLastName,

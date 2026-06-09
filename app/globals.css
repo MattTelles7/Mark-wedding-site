@@ -1018,6 +1018,8 @@ h3,
 
 .admin-form-grid,
 .guest-edit-form,
+.new-household-guest-row,
+.new-family-member-row,
 .admin-search div {
   display: grid;
   gap: 0.85rem;
@@ -1025,6 +1027,8 @@ h3,
 
 .admin-form-grid label,
 .guest-edit-form label,
+.new-household-guest-row label,
+.new-family-member-row label,
 .admin-search label {
   display: grid;
   gap: 0.35rem;
@@ -1038,6 +1042,11 @@ h3,
 .admin-form-grid input,
 .guest-edit-form input,
 .guest-edit-form select,
+.guest-edit-form textarea,
+.new-household-guest-row input,
+.new-family-member-row input,
+.new-family-member-row select,
+.new-family-member-row textarea,
 .admin-search input {
   width: 100%;
   min-height: 42px;
@@ -1046,6 +1055,122 @@ h3,
   color: var(--ink);
   padding: 0.7rem 0.8rem;
   text-transform: none;
+}
+
+.guest-edit-form textarea,
+.new-family-member-row textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.admin-create-household {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-household-fields {
+  align-items: start;
+}
+
+.admin-new-household-guests {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.new-household-guest-row,
+.new-family-member-row {
+  border: 1px solid rgba(16, 38, 63, 0.12);
+  background: #fbfcfd;
+  padding: 0.85rem;
+  align-items: end;
+}
+
+.new-family-member-status {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.admin-editor-heading,
+.guest-row-status {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-editor-heading {
+  margin-bottom: 1rem;
+}
+
+.admin-editor-heading h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.admin-save-indicator {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid currentColor;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-save-saved {
+  color: #3d8155;
+}
+
+.admin-save-saving {
+  color: #6f5a31;
+}
+
+.admin-save-dirty {
+  color: #6f5a31;
+}
+
+.admin-save-error,
+.admin-field-error,
+.admin-form-error,
+.admin-row-message {
+  color: #9d443d;
+}
+
+.admin-field-error {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-form-message,
+.admin-form-error,
+.admin-row-message {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.admin-form-message {
+  color: #3d8155;
+}
+
+.admin-form-grid input[aria-invalid="true"],
+.guest-edit-form input[aria-invalid="true"],
+.guest-edit-form textarea[aria-invalid="true"],
+.new-household-guest-row input[aria-invalid="true"],
+.new-family-member-row input[aria-invalid="true"],
+.new-family-member-row textarea[aria-invalid="true"] {
+  border-color: #9d443d;
+}
+
+.admin-shell button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .admin-form-grid .button,
@@ -1151,13 +1276,12 @@ h3,
   gap: 0.75rem;
 }
 
-.guest-edit-form {
-  align-items: end;
+.guest-row-status {
+  justify-content: flex-end;
 }
 
-.guest-admin-row > form:last-child {
-  display: flex;
-  justify-content: flex-start;
+.guest-edit-form {
+  align-items: end;
 }
 
 .household-admin-actions {
@@ -1358,6 +1482,11 @@ h3,
   .guest-edit-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .new-household-guest-row,
+  .new-family-member-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1000px) {
@@ -1388,24 +1517,23 @@ h3,
     grid-template-columns: repeat(6, 1fr);
   }
 
-  .admin-form-grid {
+  .admin-form-grid.admin-household-fields {
     grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   }
 
-  .compact-admin-form {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-  }
-
-  .add-guest-form {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  .new-household-guest-row {
+    grid-template-columns: 1fr 1fr 1.4fr auto;
   }
 
   .guest-admin-row {
-    grid-template-columns: 1fr auto;
-    align-items: end;
+    display: block;
   }
 
   .guest-edit-form {
+    grid-template-columns: 1fr 1fr 0.8fr 1.3fr auto;
+  }
+
+  .new-family-member-row {
     grid-template-columns: 1fr 1fr 0.8fr 1.3fr auto;
   }
 }
@@ -1433,6 +1561,56 @@ h3,
   .formal-invitation {
     padding-right: 1.35rem;
     padding-left: 1.35rem;
+  }
+
+  .admin-shell {
+    padding: 0.75rem;
+  }
+
+  .admin-header,
+  .admin-actions,
+  .admin-settings,
+  .admin-settings > div,
+  .admin-panel-heading,
+  .directory-heading,
+  .admin-subheading,
+  .household-admin-card summary,
+  .household-admin-actions {
+    align-items: stretch;
+  }
+
+  .admin-actions,
+  .admin-actions form,
+  .admin-actions .button,
+  .admin-settings form,
+  .admin-settings .button,
+  .admin-panel .button-primary,
+  .household-admin-actions .button {
+    width: 100%;
+  }
+
+  .household-admin-card summary {
+    flex-direction: column;
+  }
+
+  .badge-locked,
+  .badge-open {
+    width: fit-content;
+  }
+
+  .admin-search div {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-search .button,
+  .new-household-guest-row .button,
+  .new-family-member-row .button,
+  .guest-edit-form .button {
+    width: 100%;
+  }
+
+  .admin-shell .button-small {
+    min-height: 44px;
   }
 }
 
