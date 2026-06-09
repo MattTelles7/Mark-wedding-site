@@ -6,6 +6,10 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Confirmed ceremony address: St. Joseph's Catholic Church,
+  7536 Church Ln, West Harrison, IN 47060 — displayed beneath the venue
+  on the homepage schedule and event card
+
 - Confirmed reception details: Knights of Columbus Hall, 333 Main Street,
   Brookville, IN 47012, directly following Mass — displayed on the homepage
   schedule and event card
