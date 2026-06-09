@@ -13,7 +13,7 @@ WEDDING_DATE_ISO=2026-07-18
 WEDDING_SHORT_DATE=07.18.2026
 CEREMONY_TIME=2:30 PM
 CEREMONY_VENUE=St. Joseph's Catholic Church
-CEREMONY_ADDRESS=
+CEREMONY_ADDRESS=7536 Church Ln, West Harrison, IN 47060
 RSVP_DEADLINE=June 26, 2026
 RSVP_DEADLINE_ISO=2026-06-26
 ```
@@ -29,8 +29,10 @@ docker compose up -d
 
 ## Wedding Details
 
-The following details are confirmed and hardcoded in `lib/site.ts`:
+The following details are confirmed and either hardcoded or defaulted in
+`lib/site.ts`:
 
+- Ceremony: St. Joseph's Catholic Church, 7536 Church Ln, West Harrison, IN 47060
 - Reception: Knights of Columbus Hall, 333 Main Street, Brookville, IN 47012,
   directly following Mass
 

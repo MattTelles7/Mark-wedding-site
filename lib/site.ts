@@ -20,7 +20,9 @@ export function getSiteConfig() {
       time: ceremonyTime,
       title: "Nuptial Mass",
       venue: process.env.CEREMONY_VENUE || "St. Joseph's Catholic Church",
-      address: process.env.CEREMONY_ADDRESS || "",
+      address:
+        process.env.CEREMONY_ADDRESS ||
+        "7536 Church Ln, West Harrison, IN 47060",
     },
     reception: {
       venue: "Knights of Columbus Hall",
