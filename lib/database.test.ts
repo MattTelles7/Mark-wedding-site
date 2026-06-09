@@ -69,17 +69,39 @@ describe("WeddingDatabase migrations", () => {
     temporaryDirectories.push(directory);
     const filename = path.join(directory, "app.db");
     const first = createDatabase(filename);
-    first.createHousehold({
+    const householdId = first.createHousehold({
       householdName: "The Wolfe Family",
       searchLastName: "Wolfe",
     });
+    const guestId = first.createGuest(householdId, {
+      firstName: "Mark",
+      lastName: "Wolfe",
+    });
+    first.updateGuest(guestId, {
+      firstName: "Mark",
+      lastName: "Wolfe",
+      status: "attending",
+      notes: "Preserve this note",
+    });
+    first.setHouseholdLocked(householdId, true);
     first.close();
     openDatabases.splice(openDatabases.indexOf(first), 1);
 
     const reopened = createDatabase(filename);
 
     expect(reopened.getSchemaVersion()).toBe(1);
-    expect(reopened.getHouseholds()).toHaveLength(1);
+    const [household] = reopened.getHouseholds();
+    expect(household).toMatchObject({
+      householdName: "The Wolfe Family",
+      searchLastName: "Wolfe",
+      isLocked: true,
+    });
+    expect(household.guests[0]).toMatchObject({
+      firstName: "Mark",
+      lastName: "Wolfe",
+      status: "attending",
+      notes: "Preserve this note",
+    });
   });
 });
 
