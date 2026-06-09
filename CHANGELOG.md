@@ -49,3 +49,5 @@ All notable changes to this project are documented here.
 - Docker healthchecks now use `/api/health`
 - Local and isolated test environments use a portable SQLite path and can keep
   admin sessions over HTTP; public HTTPS deployments can require secure cookies
+- Completed work now requires a passing pull request into `develop`, followed
+  by local and remote branch cleanup

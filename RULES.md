@@ -40,9 +40,22 @@
 
 Codex works only on `develop` and `feature/*`, `fix/*`, or `chore/*` branches.
 Codex must not merge `develop` into `main` or push meaningful work directly to
-`main`. Work on one branch at a time. Delete a merged feature, fix, or chore
-branch after it is fully merged into `develop`; never delete `main` or
-`develop`.
+`main`. Work on one branch at a time.
+
+When feature, fix, or chore work is complete, Codex must finish the integration
+workflow in the same task unless the user explicitly pauses it or a documented
+blocker prevents it:
+
+1. Run the full required validation suite.
+2. Push the completed branch and open a pull request targeting `develop`.
+3. Wait for required GitHub checks and address failures.
+4. Merge the passing pull request into `develop`.
+5. Fast-forward the local `develop` branch.
+6. Delete the merged branch locally and remotely.
+
+Do not leave completed work only on a feature, fix, or chore branch. Audit and
+remove redundant branches once their commits are confirmed in `develop`.
+Never delete `main` or `develop`.
 
 Prefer Conventional Commits and keep each commit focused on one logical
 change.

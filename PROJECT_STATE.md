@@ -3,8 +3,10 @@
 ## Current Status
 
 - `develop` remains the active integration branch.
-- Content and photography polish is on `feature/site-content-photo-polish` and
-  has not been merged into `develop` or `main`.
+- `develop` contains the completed invitation, household RSVP, content, photo,
+  admin-session, and VM-test work.
+- Completed feature branches have been removed after integration into
+  `develop`.
 - The homepage now uses confirmed Mark & Guerdithe wedding information with a
   custom navy/cream invitation design.
 - The public RSVP flow uses admin-created households and individual invited
@@ -56,6 +58,8 @@ placeholders.
 - Persistent host directory: `/opt/wedding-rsvp/data`
 - `develop` is used for active VM testing.
 - `main` is updated only by a manual project-owner release decision.
+- Completed feature, fix, and chore branches are merged into `develop` through
+  passing pull requests and then deleted locally and remotely.
 - Re-running `install.sh --branch develop|main` installs or safely updates.
 - `update.sh` defaults to the current branch and accepts the same branch flag.
 - Existing `.env`, `data`, and `data/app.db` are preserved.
