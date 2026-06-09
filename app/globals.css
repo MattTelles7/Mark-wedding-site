@@ -113,7 +113,9 @@ h3,
 }
 
 .site-nav {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 50%;
   z-index: 5;
   width: min(1180px, calc(100% - 2rem));
   min-height: 76px;
@@ -122,6 +124,7 @@ h3,
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 250, 240, 0.2);
+  transform: translateX(-50%);
 }
 
 .wordmark {
@@ -149,16 +152,20 @@ h3,
 .hero-layout {
   position: relative;
   z-index: 2;
-  width: min(1180px, calc(100% - 2rem));
+  width: 100%;
+  min-height: 100svh;
   margin: 0 auto;
-  padding: 4rem 0 5rem;
-  display: grid;
-  gap: 3.5rem;
-  align-items: center;
+  padding: 7.5rem 1rem 3rem;
+  display: flex;
+  align-items: flex-end;
 }
 
 .hero-copy {
-  text-align: center;
+  position: relative;
+  z-index: 2;
+  width: min(34rem, 100%);
+  text-align: left;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.78);
   animation: invitation-copy-reveal 650ms ease-out both;
 }
 
@@ -177,8 +184,8 @@ h3,
 
 .hero-copy h1 {
   max-width: 10ch;
-  margin: 0 auto 1.35rem;
-  font-size: clamp(4.2rem, 19vw, 7.6rem);
+  margin: 0 0 1.35rem;
+  font-size: clamp(3.65rem, 18vw, 5.2rem);
   font-style: italic;
   line-height: 0.78;
   letter-spacing: -0.055em;
@@ -252,62 +259,27 @@ h3,
 }
 
 .hero-photo-wrap {
-  width: min(430px, 88%);
-  margin: 0 auto;
-  padding: 0.6rem;
-  border: 1px solid rgba(216, 198, 165, 0.48);
-  transform: rotate(2.5deg);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
   animation: invitation-photo-reveal 750ms 120ms cubic-bezier(0.2, 0.8, 0.2, 1)
     both;
 }
 
-.photo-placeholder {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(rgba(9, 26, 45, 0.24), rgba(9, 26, 45, 0.52)),
-    radial-gradient(circle at 30% 18%, #acb4ae, transparent 28%),
-    linear-gradient(150deg, #788b8a, #c8baa0 62%, #53666b);
-  color: var(--paper);
-  box-shadow: var(--shadow);
-}
-
-.photo-placeholder::before {
+.hero-photo-wrap::after {
   position: absolute;
-  inset: 1rem;
-  border: 1px solid rgba(255, 250, 240, 0.46);
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(4, 13, 23, 0.4), transparent 28%),
+    linear-gradient(0deg, rgba(4, 13, 23, 0.9), rgba(4, 13, 23, 0.05) 74%);
   content: "";
 }
 
-.photo-placeholder-inner {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-align: center;
-}
-
-.photo-placeholder-inner > span:last-child {
-  max-width: 18ch;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.photo-mark {
-  font-family: var(--serif);
-  font-size: 2rem;
-  font-style: italic;
-}
-
-.hero-photo-card {
-  min-height: min(62svh, 560px);
+.hero-photo {
+  object-fit: cover;
+  object-position: 52% center;
 }
 
 .scroll-cue {
@@ -342,11 +314,18 @@ h3,
   background-size: 28px 28px;
 }
 
+.invitation-layout {
+  width: min(1220px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 4rem;
+}
+
 .formal-invitation {
   position: relative;
   z-index: 2;
-  width: min(700px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   border: 1px solid var(--gold);
   outline: 1px solid rgba(173, 139, 87, 0.35);
   outline-offset: -10px;
@@ -415,32 +394,43 @@ h3,
 .portrait-pair {
   position: relative;
   z-index: 3;
-  width: min(720px, calc(100% - 1.5rem));
-  margin: 4rem auto 0;
+  width: min(520px, 100%);
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.8rem;
+  gap: 1.5rem;
 }
 
 .portrait-card {
-  min-height: clamp(220px, 58vw, 390px);
-  border: 8px solid var(--paper);
+  position: relative;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--navy-soft);
+  box-shadow: 0 20px 48px rgba(16, 38, 63, 0.18);
 }
 
 .portrait-card-left {
-  transform: rotate(-3deg) translateY(0.7rem);
+  aspect-ratio: 2 / 3;
   animation: portrait-left-reveal 650ms 220ms cubic-bezier(0.2, 0.8, 0.2, 1)
     both;
 }
 
 .portrait-card-right {
-  transform: rotate(3deg);
+  aspect-ratio: 4 / 5;
   animation: portrait-right-reveal 650ms 320ms cubic-bezier(0.2, 0.8, 0.2, 1)
     both;
 }
 
-.portrait-card .photo-placeholder-inner {
-  padding: 1rem;
+.portrait-card img {
+  object-fit: cover;
+}
+
+.portrait-card-left img {
+  object-position: center;
+}
+
+.portrait-card-right img {
+  object-position: 48% center;
 }
 
 .section {
@@ -1243,60 +1233,81 @@ h3,
 @keyframes invitation-photo-reveal {
   from {
     opacity: 0;
-    transform: translateY(28px) rotate(4.5deg);
+    transform: translateY(20px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) rotate(2.5deg);
+    transform: translateY(0);
   }
 }
 
 @keyframes portrait-left-reveal {
   from {
     opacity: 0;
-    transform: translateY(32px) rotate(-5deg);
+    transform: translateY(32px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0.7rem) rotate(-3deg);
+    transform: translateY(0);
   }
 }
 
 @keyframes portrait-right-reveal {
   from {
     opacity: 0;
-    transform: translateY(32px) rotate(5deg);
+    transform: translateY(32px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) rotate(3deg);
+    transform: translateY(0);
   }
 }
 
 @media (min-width: 680px) {
   .site-nav {
+    position: relative;
+    left: auto;
     width: min(1180px, calc(100% - 4rem));
+    transform: none;
   }
 
   .hero-layout {
     width: min(1180px, calc(100% - 4rem));
+    min-height: auto;
     padding: 5rem 0 6rem;
+    display: grid;
     grid-template-columns: 0.92fr 1.08fr;
+    gap: clamp(2.5rem, 5vw, 5rem);
+    align-items: center;
   }
 
   .hero-copy {
     text-align: left;
+    text-shadow: none;
   }
 
   .hero-copy h1 {
+    font-size: clamp(4.5rem, 9vw, 7.6rem);
     margin-left: 0;
   }
 
   .hero-photo-wrap {
-    width: min(430px, 100%);
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: min(70svh, 680px);
+    box-shadow: 0 28px 70px rgba(3, 13, 24, 0.38);
+  }
+
+  .hero-photo-wrap::after {
+    display: none;
+  }
+
+  .hero-photo {
+    object-position: center 34%;
   }
 
   .scroll-cue {
@@ -1308,6 +1319,8 @@ h3,
   }
 
   .portrait-pair {
+    width: min(720px, 100%);
+    grid-template-columns: 1fr 1fr;
     gap: 2rem;
   }
 
@@ -1349,20 +1362,26 @@ h3,
 
 @media (min-width: 1000px) {
   .hero-layout {
+    width: min(1320px, calc(100% - 5rem));
     min-height: calc(100svh - 76px);
+    grid-template-columns: minmax(320px, 0.72fr) minmax(540px, 1.28fr);
   }
 
-  .hero-photo-card {
-    min-height: 610px;
+  .hero-photo-wrap {
+    min-height: calc(100svh - 126px);
+    max-height: 820px;
   }
 
-  .formal-invitation {
-    margin-left: calc(50% - 420px);
+  .invitation-layout {
+    grid-template-columns: minmax(500px, 700px) minmax(390px, 1fr);
+    gap: clamp(3rem, 6vw, 7rem);
+    align-items: center;
   }
 
   .portrait-pair {
-    width: 530px;
-    margin: -22rem calc(50% - 520px) 0 auto;
+    width: 100%;
+    margin: 0;
+    gap: 1.25rem;
   }
 
   .summary-grid {
@@ -1403,8 +1422,8 @@ h3,
   }
 
   .hero-layout {
-    width: calc(100% - 1.5rem);
-    padding-top: 3rem;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
   }
 
   .hero-copy h1 {
