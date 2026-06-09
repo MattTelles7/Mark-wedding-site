@@ -51,3 +51,4 @@ All notable changes to this project are documented here.
   admin sessions over HTTP; public HTTPS deployments can require secure cookies
 - Completed work now requires a passing pull request into `develop`, followed
   by local and remote branch cleanup
+- GitHub Actions now uses the Node.js 24-based checkout and setup-node actions
