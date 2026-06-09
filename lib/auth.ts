@@ -51,7 +51,7 @@ export async function createAdminSession() {
 
   cookieStore.set(SESSION_COOKIE, `${expiresAt}.${sign(expiresAt)}`, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.SESSION_COOKIE_SECURE === "true",
     sameSite: "lax",
     maxAge: SESSION_DURATION_SECONDS,
     path: "/",

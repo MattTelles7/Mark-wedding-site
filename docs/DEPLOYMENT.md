@@ -46,6 +46,10 @@ The admin password is printed only when the installer generates a new value.
 The installer never runs `docker compose down -v`, removes Docker volumes,
 deletes `data/app.db`, or replaces an existing `.env`.
 
+Keep `SESSION_COOKIE_SECURE=false` while accessing an isolated test VM over
+plain HTTP. Set it to `true` before serving the public site over HTTPS; otherwise
+the browser will not send the admin session cookie securely.
+
 Database schema migrations run automatically when the app starts. They are
 additive and preserve the original `rsvps` table and rows.
 

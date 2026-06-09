@@ -42,6 +42,8 @@ Do not use `main` as the active development branch.
      making the site publicly reachable.
    - `SESSION_SECRET` signs the admin login cookie. It is not the login
      password. Set it to a private random value of at least 32 characters.
+   - `SESSION_COOKIE_SECURE=false` allows admin login over localhost or an
+     isolated HTTP test VM. Set it to `true` when the public site uses HTTPS.
 
 3. Install dependencies and start the development server:
 
