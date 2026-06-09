@@ -13,6 +13,13 @@
 - [x] Prevent public changes after household confirmation.
 - [x] Allow admin response editing and household unlocking.
 - [x] Add household/guest CSV export and dashboard counts.
+- [x] Require at least one invited person during household creation.
+- [x] Add inline admin validation and household-name/surname defaults.
+- [x] Autosave admin household, person, status, and notes fields on blur.
+- [x] Show explicit admin saving, saved, and failure states.
+- [x] Prevent deletion of the final invited person from a household.
+- [x] Standardize admin submission status and action labels.
+- [x] Add populated-database migration and admin autosave regression tests.
 - [x] Test the public pages at 390px and desktop widths.
 - [x] Submit and verify a mixed attending/declined household RSVP.
 - [x] Confirm admin login, household creation, public locking, admin unlocking,

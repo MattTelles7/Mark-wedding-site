@@ -74,6 +74,33 @@ and the production build. Update the project memory files when state changes.
 - Re-running the branch-specific installer must be safe.
 - Cloudflare and public TLS are outside this repository.
 
+## SQLite Data Preservation
+
+- Never delete, reset, truncate, replace, or wipe a production SQLite database
+  to deploy code, repair a migration, or simplify testing.
+- Never remove the production `data` directory, `data/app.db`, Docker volume,
+  or host bind mount. Do not use destructive volume or cleanup commands.
+- Schema changes must use ordered, transactional, forward-only migrations.
+  Migrations must preserve all household, invited-person, RSVP status, notes,
+  settings, and legacy response rows.
+- Application rebuilds, container restarts, installer reruns, branch updates,
+  and VM reboots must leave the same database file and records intact.
+- Test migrations against a populated database and verify data survival before
+  deploying them.
+- If a future destructive migration is truly unavoidable, stop and obtain the
+  project owner's explicit approval plus a verified backup and rollback plan.
+
+## Admin UX
+
+- Admin changes must be stupid-proof: require valid data before creating
+  records, show clear inline errors, preserve typed values when persistence
+  fails, confirm destructive actions, prevent empty household shells, and make
+  save state obvious.
+- Prefer immediate, database-backed autosave on field blur for routine edits.
+  Do not show a normal Save button when autosave is the established behavior.
+- Admin controls must remain usable without horizontal scrolling on a narrow
+  phone viewport.
+
 ## Content
 
 - Do not invent missing wedding content.
