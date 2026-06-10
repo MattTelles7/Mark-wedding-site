@@ -50,11 +50,11 @@ export async function searchHouseholds(
     };
   }
 
-  if (!areRsvpsOpen()) {
+  if (!(await areRsvpsOpen())) {
     return { message: "RSVPs are not open right now." };
   }
 
-  const households = searchPublicHouseholds(validation.lastName);
+  const households = await searchPublicHouseholds(validation.lastName);
   return {
     households,
     searchedLastName: validation.lastName,
@@ -92,7 +92,10 @@ export async function submitHouseholdRsvp(
     };
   }
 
-  const result = confirmHousehold(validation.householdId, validation.responses);
+  const result = await confirmHousehold(
+    validation.householdId,
+    validation.responses,
+  );
 
   if (result.success) {
     redirect("/rsvp/success");

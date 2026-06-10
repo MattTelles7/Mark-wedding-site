@@ -27,7 +27,7 @@ export type AdminHouseholdRepository = {
     contactEmail: string;
     contactPhone: string;
     guests: SavedGuest[];
-  }): number;
+  }): Promise<number>;
   updateHousehold(
     householdId: number,
     input: {
@@ -36,15 +36,15 @@ export type AdminHouseholdRepository = {
       contactEmail: string;
       contactPhone: string;
     },
-  ): boolean;
-  createGuest(householdId: number, input: SavedGuest): number;
-  updateGuest(guestId: number, input: SavedGuest): boolean;
+  ): Promise<boolean>;
+  createGuest(householdId: number, input: SavedGuest): Promise<number>;
+  updateGuest(guestId: number, input: SavedGuest): Promise<boolean>;
 };
 
-export function createAdminHousehold(
+export async function createAdminHousehold(
   repository: AdminHouseholdRepository,
   input: AdminHouseholdCreationInput,
-): AdminMutationResult<{ householdId: number }> {
+): Promise<AdminMutationResult<{ householdId: number }>> {
   const validation = validateNewHousehold(input);
   if (!validation.ok) {
     return {
@@ -54,19 +54,23 @@ export function createAdminHousehold(
     };
   }
 
-  const householdId = repository.createHouseholdWithGuests(validation.value);
+  const householdId = await repository.createHouseholdWithGuests(
+    validation.value,
+  );
   return { success: true, data: { householdId } };
 }
 
-export function saveAdminHousehold(
+export async function saveAdminHousehold(
   repository: AdminHouseholdRepository,
   input: AdminHouseholdDetailsInput & { id: number },
-): AdminMutationResult<{
-  searchLastName: string;
-  householdName: string;
-  contactEmail: string;
-  contactPhone: string;
-}> {
+): Promise<
+  AdminMutationResult<{
+    searchLastName: string;
+    householdName: string;
+    contactEmail: string;
+    contactPhone: string;
+  }>
+> {
   const validation = validateHouseholdDetails(input);
   if (!validation.ok) {
     return {
@@ -76,7 +80,7 @@ export function saveAdminHousehold(
     };
   }
 
-  const saved = repository.updateHousehold(input.id, validation.value);
+  const saved = await repository.updateHousehold(input.id, validation.value);
   if (!saved) {
     return { success: false, message: "This household no longer exists." };
   }
@@ -92,11 +96,11 @@ export function saveAdminHousehold(
   };
 }
 
-export function createAdminGuest(
+export async function createAdminGuest(
   repository: AdminHouseholdRepository,
   householdId: number,
   input: AdminGuestInput,
-): AdminMutationResult<{ guestId: number } & SavedGuest> {
+): Promise<AdminMutationResult<{ guestId: number } & SavedGuest>> {
   const validation = validateInvitedGuest(input);
   if (!validation.ok) {
     return {
@@ -106,15 +110,15 @@ export function createAdminGuest(
     };
   }
 
-  const guestId = repository.createGuest(householdId, validation.value);
+  const guestId = await repository.createGuest(householdId, validation.value);
   return { success: true, data: { guestId, ...validation.value } };
 }
 
-export function saveAdminGuest(
+export async function saveAdminGuest(
   repository: AdminHouseholdRepository,
   guestId: number,
   input: AdminGuestInput,
-): AdminMutationResult<SavedGuest> {
+): Promise<AdminMutationResult<SavedGuest>> {
   const validation = validateInvitedGuest(input);
   if (!validation.ok) {
     return {
@@ -124,7 +128,7 @@ export function saveAdminGuest(
     };
   }
 
-  const saved = repository.updateGuest(guestId, validation.value);
+  const saved = await repository.updateGuest(guestId, validation.value);
   if (!saved) {
     return { success: false, message: "This person no longer exists." };
   }

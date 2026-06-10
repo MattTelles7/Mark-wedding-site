@@ -75,22 +75,12 @@ assert_target_preserves_data() {
 
   while IFS= read -r path; do
     case "$path" in
-      data)
-        echo "Refusing to update: origin/$BRANCH tracks protected data path $path." >&2
-        exit 1
-        ;;
-      .env | data/app.db)
+      .env)
         echo "Refusing to update: origin/$BRANCH tracks protected file $path." >&2
         exit 1
         ;;
-      data/*)
-        if [[ "$path" != "data/.gitkeep" ]]; then
-          echo "Refusing to update: origin/$BRANCH tracks protected data path $path." >&2
-          exit 1
-        fi
-        ;;
     esac
-  done < <(run_git ls-tree -r --name-only "origin/$BRANCH" -- .env data)
+  done < <(run_git ls-tree -r --name-only "origin/$BRANCH" -- .env)
 }
 
 assert_clean_checkout() {
@@ -111,8 +101,9 @@ assert_safe_deployment_layout() {
     exit 1
   fi
 
-  if ! grep -Eq '^[[:space:]]*-[[:space:]]*\.\/data:\/app\/data[[:space:]]*$' "$compose_file"; then
-    echo "Refusing to update: docker-compose.yml must bind ./data to /app/data." >&2
+  if ! grep -q "postgres_data" "$compose_file"; then
+    echo "Refusing to update: docker-compose.yml must define the postgres_data volume." >&2
+    echo "NEVER run docker compose down -v. Postgres data is sacred." >&2
     exit 1
   fi
 }
@@ -165,12 +156,6 @@ if [[ ! -f "$INSTALL_DIR/.env" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$INSTALL_DIR/data" ]]; then
-  echo "Refusing to update because $INSTALL_DIR/data is missing." >&2
-  echo "Run install.sh to safely restore the persistent data directory." >&2
-  exit 1
-fi
-
 echo "Rebuilding and restarting the application..."
 (
   cd "$INSTALL_DIR"
@@ -188,4 +173,5 @@ echo "Installed commit: $COMMIT_HASH"
 echo "Local URL: http://${VM_IP}:3000"
 echo "Admin URL: http://${VM_IP}:3000/admin"
 echo "Preserved environment: $INSTALL_DIR/.env"
-echo "Preserved database directory: $INSTALL_DIR/data"
+echo "Postgres data is stored in Docker named volume: postgres_data"
+echo "NEVER run docker compose down -v. Data lives in that volume."

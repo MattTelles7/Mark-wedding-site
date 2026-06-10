@@ -12,11 +12,11 @@
 ## Permanent Stack Decisions
 
 - Next.js App Router with TypeScript
-- SQLite through `better-sqlite3`
-- One Docker Compose service on one Ubuntu or Debian VM
-- Database path in production: `/app/data/app.db`
-- Host data mount: `./data:/app/data`
-- No external database, auth provider, paid service, or orchestration platform
+- PostgreSQL through the `pg` (node-postgres) library
+- One Docker Compose stack on one Ubuntu or Debian VM: app container + postgres container
+- Postgres data stored in Docker named volume `postgres_data` (never delete)
+- Database connection via `DATABASE_URL` environment variable (required at runtime)
+- No external database provider, auth provider, paid service, or orchestration platform
 
 ## Security
 
@@ -68,27 +68,29 @@ and the production build. Update the project memory files when state changes.
 
 - Production installation path is `/opt/wedding-rsvp`.
 - App listens on port `3000`.
-- Rebuilds and installer reruns must preserve `/opt/wedding-rsvp/data`.
-- Never delete `/opt/wedding-rsvp/data/app.db` or an existing `.env`.
+- Rebuilds and installer reruns must preserve the `postgres_data` Docker named volume.
+- Never delete the `postgres_data` Docker volume.
 - Never run `docker compose down -v` or delete Docker volumes during updates.
+- Never delete an existing `.env`.
 - Re-running the branch-specific installer must be safe.
 - Cloudflare and public TLS are outside this repository.
 
-## SQLite Data Preservation
+## Postgres Data Preservation
 
-- Never delete, reset, truncate, replace, or wipe a production SQLite database
+- Never delete, reset, truncate, replace, or wipe the `postgres_data` Docker volume
   to deploy code, repair a migration, or simplify testing.
-- Never remove the production `data` directory, `data/app.db`, Docker volume,
-  or host bind mount. Do not use destructive volume or cleanup commands.
-- Schema changes must use ordered, transactional, forward-only migrations.
+- Never run `docker compose down -v`. This destroys the Postgres volume.
+- Schema changes must use ordered, forward-only migrations stored in `lib/migrate.ts`.
   Migrations must preserve all household, invited-person, RSVP status, notes,
   settings, and legacy response rows.
 - Application rebuilds, container restarts, installer reruns, branch updates,
-  and VM reboots must leave the same database file and records intact.
-- Test migrations against a populated database and verify data survival before
-  deploying them.
+  and VM reboots must leave the same database data intact.
+- Test migrations against a populated database and verify data survival before deploying.
 - If a future destructive migration is truly unavoidable, stop and obtain the
   project owner's explicit approval plus a verified backup and rollback plan.
+- Backups are handled by the project owner through Proxmox VM snapshots. No
+  app-level backup script exists or should be added.
+- `DATABASE_URL` must be set in `.env`. The app fails loudly at startup if missing.
 
 ## Admin UX
 
@@ -109,8 +111,9 @@ and the production build. Update the project memory files when state changes.
 
 ## Avoid
 
-- Kubernetes, Postgres, MySQL, and external auth providers
+- Kubernetes, MySQL, and external auth providers
 - Client-only admin protection
 - Hardcoded secrets
 - Large UI frameworks without a demonstrated need
 - Unrelated refactors during focused work
+- `docker compose down -v` (destroys Postgres volume — forbidden)

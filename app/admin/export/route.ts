@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  const csv = householdRsvpsToCsv(getHouseholdExportRows());
+  const csv = householdRsvpsToCsv(await getHouseholdExportRows());
   const date = new Date().toISOString().slice(0, 10);
 
   return new NextResponse(csv, {

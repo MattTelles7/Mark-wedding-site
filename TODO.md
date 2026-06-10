@@ -9,7 +9,10 @@
 - [x] Add the supplied hero and portrait photography.
 - [x] Replace free-form RSVPs with household and individual invited-person
       responses.
-- [x] Add admin RSVP open/closed control stored in SQLite.
+- [x] Add admin RSVP open/closed control stored in database.
+- [x] Migrate database from SQLite to PostgreSQL with Docker Compose.
+- [x] Fix admin login crash (removed SQLite dependency, all DB calls now async).
+- [ ] Deploy feature/postgres-migration to Debian test VM and verify health.
 - [x] Prevent public changes after household confirmation.
 - [x] Allow admin response editing and household unlocking.
 - [x] Add household/guest CSV export and dashboard counts.

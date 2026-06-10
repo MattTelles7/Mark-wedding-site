@@ -2,61 +2,52 @@
 
 ## Current Status
 
-- `develop` remains the active integration branch.
-- `develop` contains the completed invitation, household RSVP, content, photo,
-  admin-session, VM-test, reception-details, registry-removal, favicon, and
-  ceremony-address work.
-- Completed feature branches have been removed after integration into
-  `develop`.
-- The homepage now uses confirmed Mark & Guerdithe wedding information with a
-  custom navy/cream invitation design.
-- The public RSVP flow uses admin-created households and individual invited
-  people rather than free-form submissions.
-- The admin can open or close RSVPs, create households with at least one
-  invited person, autosave household/person fields on blur, edit responses even
-  after submission, reopen households, view six summary counts, and export
-  household/guest CSV data.
-- Admin household creation suggests `The [Last Name] Family`, preserves manual
-  household-name edits, prefills new member surnames, validates inline, and
-  prevents empty household shells or deletion of a household's final person.
-- Admin submission labels are `Open for Submission` and
-  `Submitted and Closed`.
-- The original `rsvps` table and any existing rows are preserved as read-only
-  legacy responses in the admin dashboard.
-- The supplied engagement photos now appear in the responsive hero and beside
-  the formal invitation.
-- Reception details are confirmed and displayed: Knights of Columbus Hall,
-  333 Main Street, Brookville, IN 47012, directly following Mass.
-- The registry section and nav link have been removed entirely. There is no
-  registry.
-- Browser tab favicon (`app/icon.png`) is a square crop from the bottom half
-  of `mark-guerdithe-silhouette.jpg`.
-- Local and isolated test environments can use the documented `admin`
-  password. Fresh VM installs replace it with a generated password.
-- The feature is deployed at `/opt/wedding-rsvp-photo` on the Debian 13 test
-  VM and is reachable at `http://192.168.50.194:3000`.
-- Branch-aware Docker and VM install/update files remain present.
+- `develop` is the active integration branch.
+- `feature/postgres-migration` is the current in-progress branch.
+- The app has been migrated from SQLite to PostgreSQL.
+- Admin login crash was fixed by removing the SQLite dependency and ensuring
+  all database calls are properly async.
+- All public pages remain unchanged in design.
+- Reception and ceremony details are confirmed and displayed correctly.
+- Registry section is permanently removed.
+- Favicon and Apple touch icon are in place.
 
 ## Last Completed Feature
 
-Confirmed ceremony address added: St. Joseph's Catholic Church,
-7536 Church Ln, West Harrison, IN 47060.
+Postgres migration: switched from SQLite (`better-sqlite3`) to PostgreSQL (`pg`)
+with Docker Compose postgres service, named volume `postgres_data`, automatic
+startup migrations via `instrumentation.ts`, and updated CI with Postgres service.
+
+## Database
+
+- **Database engine**: PostgreSQL 17 (in Docker Compose)
+- **Connection**: `DATABASE_URL` environment variable (required)
+- **Volume**: Docker named volume `postgres_data` (never delete)
+- **Migrations**: `lib/migrate.ts` — forward-only, idempotent, tracked by name in
+  `migrations` table
+- **Migration 001**: Creates `migrations`, `settings`, `households`,
+  `invited_guests`, `legacy_rsvps` tables
+- **Old SQLite data**: Intentionally abandoned. No real production data existed at
+  time of migration.
 
 ## Known Missing Content
 
-All ceremony and reception details are now confirmed and displayed. No content
-is intentionally hidden or placeholder. The only remaining pre-launch work is
+All ceremony and reception details are confirmed and displayed. No content is
+intentionally hidden or placeholder. The only remaining pre-launch work is
 importing the real invitation household/guest list and completing VM validation.
 
 ## Pending Validation
 
-- Confirm household/guest data persists through a VM reboot.
-- Test household and invited-person deletion through a real browser.
-- Confirm admin logout through a real browser.
-- Test a branch-aware fresh install on a second clean Ubuntu or Debian VM.
-- Validate branch switching once a release exists on `main`.
-- The GitHub repository is private, so unauthenticated installer and clone URLs
-  require the repository to become public or authenticated VM GitHub access.
+- Deploy `feature/postgres-migration` to Debian test VM.
+- Verify postgres container healthy (`docker compose ps`).
+- Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
+- Verify admin login works with configured `ADMIN_PASSWORD`.
+- Verify household creation, guest management, public RSVP flow.
+- Confirm Postgres data survives `docker compose restart app`.
+- Confirm Postgres data survives `docker compose up -d --build`.
+- Import the real invitation household and guest list.
+- Confirm household and invited-person data persists through a VM reboot.
+- Test a branch-aware fresh install on a clean Ubuntu or Debian VM.
 
 ## Deployment Assumptions
 
@@ -64,16 +55,16 @@ importing the real invitation household/guest list and completing VM validation.
 - Install path: `/opt/wedding-rsvp`
 - App port: `3000`
 - Cloudflare and TLS handled outside the app
-- Persistent host directory: `/opt/wedding-rsvp/data`
+- Postgres data stored in Docker named volume: `postgres_data`
 - `develop` is used for active VM testing.
 - `main` is updated only by a manual project-owner release decision.
 - Completed feature, fix, and chore branches are merged into `develop` through
   passing pull requests and then deleted locally and remotely.
 - Re-running `install.sh --branch develop|main` installs or safely updates.
 - `update.sh` defaults to the current branch and accepts the same branch flag.
-- Existing `.env`, `data`, and `data/app.db` are preserved.
-- Fresh installs replace the example admin password and print the generated
-  password once; updates do not replace existing credentials.
+- Existing `.env` is preserved. Postgres env vars are generated if missing.
+- Fresh installs generate `POSTGRES_PASSWORD`, `DATABASE_URL`, and print a
+  generated `ADMIN_PASSWORD` once; updates do not replace existing credentials.
 - `SESSION_COOKIE_SECURE=false` supports isolated HTTP testing. Public HTTPS
   deployments must set it to `true`.
 
@@ -86,7 +77,13 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run db:migrate
 docker compose up -d --build
+docker compose ps
+docker compose logs -f app
+docker compose logs -f postgres
+docker compose exec postgres psql -U wedding_rsvp -d wedding_rsvp
+docker compose restart app
 curl http://localhost:3000/api/health
 ```
 
@@ -98,16 +95,23 @@ curl http://localhost:3000/api/health
 - Admin household editor: `app/admin/household-manager.tsx`
 - Admin validation and persistence service: `lib/admin-validation.ts`,
   `lib/admin-service.ts`
-- Database and migrations: `lib/database.ts`
-- Database file in container: `/app/data/app.db`
+- Database functions: `lib/database.ts`
+- Database pool + helpers: `lib/db.ts`
+- Migration runner: `lib/migrate.ts`
+- Migration CLI script: `scripts/migrate.ts`
+- Startup hook: `instrumentation.ts`
 - Authentication: `lib/auth.ts`
 - Deployment scripts: `install.sh`, `update.sh`
-- VM deployment guide: `docs/DEPLOYMENT.md`
 
 ## Database Schema
 
-SQLite `PRAGMA user_version` is `1`. Migrations run transactionally and only add
-tables/indexes; they do not drop or rewrite the legacy table.
+PostgreSQL tables created by migration `001_initial_schema`:
+
+Table `migrations`:
+
+- `id BIGSERIAL PRIMARY KEY`
+- `name TEXT UNIQUE NOT NULL`
+- `applied_at TIMESTAMPTZ`
 
 Table `settings`:
 
@@ -117,79 +121,57 @@ Table `settings`:
 
 Table `households`:
 
-- `id INTEGER PRIMARY KEY AUTOINCREMENT`
+- `id BIGSERIAL PRIMARY KEY`
 - `household_name TEXT NOT NULL`
 - `search_last_name TEXT NOT NULL` (normalized for exact public search)
 - optional `contact_email` and `contact_phone`
-- `is_locked INTEGER NOT NULL DEFAULT 0`
-- optional `submitted_at`
-- `created_at` and `updated_at`
+- `is_locked BOOLEAN NOT NULL DEFAULT FALSE`
+- optional `submitted_at TIMESTAMPTZ`
+- `created_at` and `updated_at TIMESTAMPTZ`
 
 Table `invited_guests`:
 
-- `id INTEGER PRIMARY KEY AUTOINCREMENT`
+- `id BIGSERIAL PRIMARY KEY`
 - `household_id` references `households(id)` with cascade deletion
 - `first_name TEXT NOT NULL`
 - `last_name TEXT NOT NULL`
 - `rsvp_status` constrained to `pending`, `attending`, or `declined`
 - optional admin-only `notes`
-- `created_at` and `updated_at`
+- `created_at` and `updated_at TIMESTAMPTZ`
 
-Legacy table `rsvps` remains unchanged and is no longer used for new public
-responses.
+Table `legacy_rsvps`:
+
+- `id BIGSERIAL PRIMARY KEY`
+- Preserves free-form responses from the old RSVP system
+- Read-only; no new rows are inserted
 
 ## Decisions for Future Sessions
 
-- Wedding display content comes from runtime environment variables where
-  practical.
+- Wedding display content comes from runtime environment variables where practical.
 - Unknown wedding details must remain hidden or use only approved placeholders.
 - Public surname search is exact, normalized, rate-limited, and capped at ten
   household results.
 - Public household confirmation updates every invited person and locks the
-  household in one immediate SQLite transaction.
+  household in one atomic Postgres transaction with `SELECT ... FOR UPDATE`.
 - Only the admin can edit responses or unlock a submitted household.
-- Admin household and invited-person edits save to SQLite when the field loses
-  focus and display saving, saved, or failure feedback without discarding typed
-  values.
+- Admin household and invited-person edits save to Postgres when the field loses
+  focus and display saving, saved, or failure feedback without discarding typed values.
 - A household is created transactionally with at least one invited person, and
   its final invited person cannot be deleted separately.
 - The app uses signed, eight-hour admin session cookies rather than accounts.
 - Rate limiting is intentionally in-memory for the single-process deployment.
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
-- Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`
-  behind a trusted proxy with direct VM traffic restricted.
-- GitHub Actions uses `actions/checkout@v6` and `actions/setup-node@v6`, whose
-  action runtime is Node.js 24.
-- On June 9, 2026, the admin household editor was upgraded to strict
-  validation, atomic household/person creation, and real SQLite autosave on
-  blur without changing the public design.
-- On June 9, 2026, the admin flow was browser-tested at desktop and 390px
-  widths. The checks covered household-name suggestions, inline email errors,
-  atomic creation, dirty/saving/saved feedback, persisted household/status/note
-  edits, failed-save value retention, blank member-row discard, surname
-  prefilling, inline member creation, closed-household admin editing, reopening,
-  and no horizontal overflow.
-- On June 8, 2026, the homepage was inspected at desktop and 390px widths with
-  no horizontal overflow. The isolated browser test covered closed RSVPs,
-  admin login, opening RSVPs, household/person creation, public household
-  search, mixed attending/declined submission, public locking, dashboard
-  counts, admin unlock, and admin response editing.
-- The in-app browser reached the protected CSV download route but cannot retain
-  downloads; CSV content and formula escaping are covered by unit tests.
-- On June 9, 2026, the feature branch Docker image built and ran healthy on the
-  Debian 13 VM. Browser checks confirmed the supplied photos, `admin` login,
-  persistent admin sessions over isolated HTTP, the RSVP open/close control,
-  and preservation of the existing SQLite file and legacy response through
-  container rebuilds.
-- Reception details are confirmed and hardcoded in `lib/site.ts`: Knights of
-  Columbus Hall, 333 Main Street, Brookville, IN 47012, directly following
-  Mass. These are not environment-variable-driven because they are fixed facts.
-- Ceremony address is confirmed: St. Joseph's Catholic Church,
-  7536 Church Ln, West Harrison, IN 47060. Defaulted in `lib/site.ts` via
-  `CEREMONY_ADDRESS` env var.
-- There is no registry. The registry section, nav link, and all registry copy
-  have been permanently removed. Do not add a registry section or wording.
+- Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`.
+- `ADMIN_PASSWORD` is the admin login password. `SESSION_SECRET` signs cookies and
+  is never typed by the user.
+- Backups are via Proxmox VM snapshots. No app-level backup script exists.
+- The `postgres_data` Docker named volume must never be deleted. Never run
+  `docker compose down -v`.
+- Reception details are confirmed: Knights of Columbus Hall, 333 Main Street,
+  Brookville, IN 47012, directly following Mass.
+- Ceremony address is confirmed: St. Joseph's Catholic Church, 7536 Church Ln,
+  West Harrison, IN 47060.
+- There is no registry. All registry code has been permanently removed.
 - The browser tab favicon is `app/icon.png` (512×512), an Apple touch icon is
   `app/apple-icon.png` (180×180). Both are square crops from the bottom half of
-  `mark-guerdithe-silhouette.jpg`. Next.js App Router auto-generates the
-  `<link rel="icon">` metadata from these files.
+  `mark-guerdithe-silhouette.jpg`.
