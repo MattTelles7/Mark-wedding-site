@@ -48,6 +48,9 @@ Do not use `main` as the active development branch.
      of at least 32 characters.
    - `SESSION_COOKIE_SECURE=false` allows admin login over localhost or an
      isolated HTTP test VM. Set it to `true` when the public site uses HTTPS.
+   - `NEXT_SERVER_ACTION_ALLOWED_ORIGINS` lists public hostnames that may submit
+     Next.js server actions through Cloudflare/reverse proxies. Defaults include
+     `wolfe-wedding.com` and `www.wolfe-wedding.com`.
    - `DATABASE_URL` connects to Postgres. For local dev, you need a running
      Postgres instance (e.g., via Docker: see below).
    - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` are used by the

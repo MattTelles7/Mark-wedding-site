@@ -1,8 +1,26 @@
 import type { NextConfig } from "next";
 
+const defaultServerActionOrigins = [
+  "wolfe-wedding.com",
+  "www.wolfe-wedding.com",
+];
+
+const serverActionOrigins = (
+  process.env.NEXT_SERVER_ACTION_ALLOWED_ORIGINS ||
+  defaultServerActionOrigins.join(",")
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      allowedOrigins: serverActionOrigins,
+    },
+  },
   async headers() {
     return [
       {
