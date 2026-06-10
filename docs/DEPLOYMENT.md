@@ -136,3 +136,7 @@ There is no automated backup. Data is backed up through Proxmox VM snapshots onl
 `TRUST_PROXY_HEADERS=true` lets the app use Cloudflare or reverse-proxy IP
 headers for basic RSVP and admin-login rate limiting. Only keep this enabled
 when the VM is firewalled so direct public traffic cannot spoof those headers.
+
+`NEXT_SERVER_ACTION_ALLOWED_ORIGINS` should include any public Cloudflare or
+reverse-proxy hostnames that submit admin/RSVP forms. The app defaults include
+`wolfe-wedding.com` and `www.wolfe-wedding.com`.
