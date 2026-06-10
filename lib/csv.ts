@@ -1,4 +1,4 @@
-import type { HouseholdExportRow, RsvpRecord } from "./database";
+import type { HouseholdExportRow } from "./database";
 
 function csvCell(value: string | number | boolean) {
   let text = String(value).replace(/\r\n?/g, "\n");
@@ -8,32 +8,6 @@ function csvCell(value: string | number | boolean) {
   }
 
   return `"${text.replaceAll('"', '""')}"`;
-}
-
-export function rsvpsToCsv(rsvps: RsvpRecord[]) {
-  const header = [
-    "Full Name",
-    "Attending",
-    "Guest Count",
-    "Meal Choice",
-    "Song Request",
-    "Message",
-    "Submitted At",
-  ];
-
-  const rows = rsvps.map((rsvp) => [
-    rsvp.fullName,
-    rsvp.attending ? "Yes" : "No",
-    rsvp.guestCount,
-    rsvp.mealChoice,
-    rsvp.songRequest,
-    rsvp.message,
-    rsvp.createdAt,
-  ]);
-
-  return [header, ...rows]
-    .map((row) => row.map((value) => csvCell(value)).join(","))
-    .join("\r\n");
 }
 
 export function householdRsvpsToCsv(rows: HouseholdExportRow[]) {

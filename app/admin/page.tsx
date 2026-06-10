@@ -7,7 +7,6 @@ import {
   areRsvpsOpen,
   getHouseholds,
   getHouseholdSummary,
-  getLegacyRsvps,
 } from "@/lib/database";
 
 export const metadata = {
@@ -15,19 +14,6 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-function formatDate(value: string) {
-  const normalized = value.includes("T")
-    ? value
-    : `${value.replace(" ", "T")}Z`;
-  const date = new Date(normalized);
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(date);
-}
 
 export default async function AdminPage({
   searchParams,
@@ -37,11 +23,10 @@ export default async function AdminPage({
   await requireAdmin();
   const { q = "" } = await searchParams;
   const filter = q.slice(0, 100);
-  const [rsvpsOpen, summary, households, legacyRsvps] = await Promise.all([
+  const [rsvpsOpen, summary, households] = await Promise.all([
     areRsvpsOpen(),
     getHouseholdSummary(),
     getHouseholds(filter),
-    getLegacyRsvps(),
   ]);
 
   return (
@@ -123,38 +108,6 @@ export default async function AdminPage({
       </section>
 
       <HouseholdManager initialHouseholds={households} filter={filter} />
-
-      {legacyRsvps.length > 0 ? (
-        <details className="legacy-responses admin-panel">
-          <summary>Legacy responses preserved ({legacyRsvps.length})</summary>
-          <p>
-            These came from the previous free-form RSVP system and remain
-            read-only.
-          </p>
-          <div className="table-scroll">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Response</th>
-                  <th>Guests</th>
-                  <th>Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {legacyRsvps.map((rsvp) => (
-                  <tr key={rsvp.id}>
-                    <td>{rsvp.fullName}</td>
-                    <td>{rsvp.attending ? "Attending" : "Declined"}</td>
-                    <td>{rsvp.guestCount}</td>
-                    <td>{formatDate(rsvp.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
-      ) : null}
     </main>
   );
 }

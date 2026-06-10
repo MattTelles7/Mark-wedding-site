@@ -8,7 +8,7 @@ const describeDb = DB_AVAILABLE ? describe : describe.skip;
 beforeEach(async () => {
   if (!DB_AVAILABLE) return;
   await query(
-    "TRUNCATE TABLE invited_guests, households, settings, legacy_rsvps RESTART IDENTITY CASCADE",
+    "TRUNCATE TABLE invited_guests, households, settings RESTART IDENTITY CASCADE",
   );
 });
 import {

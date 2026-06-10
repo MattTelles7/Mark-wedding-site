@@ -26,6 +26,7 @@ import {
   type AdminGuestStatus,
 } from "@/lib/admin-validation";
 import type { Household, InvitedGuest } from "@/lib/database";
+import { formatDate } from "@/lib/format";
 
 type SaveState = "saved" | "saving" | "dirty" | "error";
 
@@ -37,23 +38,6 @@ type GuestDraft = {
   notes: string;
   lastNameManuallyEdited: boolean;
 };
-
-function formatDate(value: string | null) {
-  if (!value) {
-    return "Not submitted";
-  }
-
-  const normalized = value.includes("T")
-    ? value
-    : `${value.replace(" ", "T")}Z`;
-  const date = new Date(normalized);
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(date);
-}
 
 function SaveIndicator({
   state,

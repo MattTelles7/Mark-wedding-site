@@ -73,18 +73,6 @@ export type ConfirmHouseholdResult =
       code: "closed" | "not_found" | "locked" | "invalid_responses";
     };
 
-// Legacy RSVPs (preserved read-only from original system)
-export type RsvpRecord = {
-  id: number;
-  fullName: string;
-  attending: boolean;
-  guestCount: number;
-  mealChoice: string;
-  songRequest: string;
-  message: string;
-  createdAt: string;
-};
-
 // ---------------------------------------------------------------------------
 // Row mappers
 // ---------------------------------------------------------------------------
@@ -293,65 +281,132 @@ export async function getHouseholds(filter = ""): Promise<Household[]> {
   const normalizedFilter = filter.trim();
   const pattern = `%${normalizedFilter}%`;
 
-  const householdRows = await query<HouseholdRow>(
-    `SELECT h.*
+  type JoinRow = HouseholdRow & {
+    g_id: string | null;
+    g_household_id: string | null;
+    g_first_name: string | null;
+    g_last_name: string | null;
+    g_rsvp_status: GuestStatus | null;
+    g_notes: string | null;
+    g_created_at: Date | null;
+    g_updated_at: Date | null;
+  };
+
+  const rows = await query<JoinRow>(
+    `SELECT
+       h.id, h.household_name, h.search_last_name, h.contact_email,
+       h.contact_phone, h.is_locked, h.submitted_at, h.created_at, h.updated_at,
+       g.id            AS g_id,
+       g.household_id  AS g_household_id,
+       g.first_name    AS g_first_name,
+       g.last_name     AS g_last_name,
+       g.rsvp_status   AS g_rsvp_status,
+       g.notes         AS g_notes,
+       g.created_at    AS g_created_at,
+       g.updated_at    AS g_updated_at
      FROM households h
+     LEFT JOIN invited_guests g ON g.household_id = h.id
      WHERE $1 = ''
         OR h.household_name ILIKE $2
         OR h.search_last_name ILIKE $2
         OR EXISTS (
-          SELECT 1 FROM invited_guests g
-          WHERE g.household_id = h.id
-            AND (g.first_name ILIKE $2 OR g.last_name ILIKE $2)
+          SELECT 1 FROM invited_guests ig
+          WHERE ig.household_id = h.id
+            AND (ig.first_name ILIKE $2 OR ig.last_name ILIKE $2)
         )
-     ORDER BY LOWER(h.household_name), h.id`,
+     ORDER BY LOWER(h.household_name), h.id, g.id`,
     [normalizedFilter, pattern],
   );
 
-  const households: Household[] = [];
-  for (const row of householdRows) {
-    const guestRows = await query<GuestRow>(
-      "SELECT * FROM invited_guests WHERE household_id = $1 ORDER BY id",
-      [Number(row.id)],
-    );
-    households.push(mapHouseholdRow(row, guestRows.map(mapGuestRow)));
+  const householdMap = new Map<number, Household>();
+  for (const row of rows) {
+    const hid = Number(row.id);
+    if (!householdMap.has(hid)) {
+      householdMap.set(hid, mapHouseholdRow(row, []));
+    }
+    if (row.g_id !== null) {
+      householdMap.get(hid)!.guests.push(
+        mapGuestRow({
+          id: row.g_id,
+          household_id: row.g_household_id!,
+          first_name: row.g_first_name!,
+          last_name: row.g_last_name!,
+          rsvp_status: row.g_rsvp_status!,
+          notes: row.g_notes,
+          created_at: row.g_created_at!,
+          updated_at: row.g_updated_at!,
+        }),
+      );
+    }
   }
-  return households;
+  return Array.from(householdMap.values());
 }
 
 export async function searchPublicHouseholds(
   lastName: string,
 ): Promise<PublicHousehold[]> {
   const normalized = normalizeSearchValue(lastName);
-  const householdRows = await query<HouseholdRow>(
-    `SELECT *
-     FROM households
-     WHERE LOWER(search_last_name) = LOWER($1)
-     ORDER BY LOWER(household_name), id
-     LIMIT 10`,
+
+  type PublicJoinRow = {
+    h_id: string;
+    household_name: string;
+    is_locked: boolean;
+    submitted_at: Date | null;
+    g_id: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    rsvp_status: GuestStatus | null;
+  };
+
+  const rows = await query<PublicJoinRow>(
+    `WITH matched AS (
+       SELECT id, household_name, is_locked, submitted_at
+       FROM households
+       WHERE LOWER(search_last_name) = LOWER($1)
+       ORDER BY LOWER(household_name), id
+       LIMIT 10
+     )
+     SELECT
+       h.id            AS h_id,
+       h.household_name,
+       h.is_locked,
+       h.submitted_at,
+       g.id            AS g_id,
+       g.first_name,
+       g.last_name,
+       g.rsvp_status
+     FROM matched h
+     LEFT JOIN invited_guests g ON g.household_id = h.id
+     ORDER BY LOWER(h.household_name), h.id, g.id`,
     [normalized],
   );
 
-  const results: PublicHousehold[] = [];
-  for (const row of householdRows) {
-    const guestRows = await query<GuestRow>(
-      "SELECT * FROM invited_guests WHERE household_id = $1 ORDER BY id",
-      [Number(row.id)],
-    );
-    results.push({
-      id: Number(row.id),
-      householdName: row.household_name,
-      isLocked: row.is_locked,
-      submittedAt: isoOrNull(row.submitted_at),
-      guests: guestRows.map((g) => ({
-        id: Number(g.id),
-        firstName: g.first_name,
-        lastName: g.last_name,
-        status: g.rsvp_status,
-      })),
-    });
+  const householdMap = new Map<
+    number,
+    PublicHousehold & { guests: Array<PublicHousehold["guests"][number]> }
+  >();
+
+  for (const row of rows) {
+    const hid = Number(row.h_id);
+    if (!householdMap.has(hid)) {
+      householdMap.set(hid, {
+        id: hid,
+        householdName: row.household_name,
+        isLocked: row.is_locked,
+        submittedAt: isoOrNull(row.submitted_at),
+        guests: [],
+      });
+    }
+    if (row.g_id !== null) {
+      householdMap.get(hid)!.guests.push({
+        id: Number(row.g_id),
+        firstName: row.first_name!,
+        lastName: row.last_name!,
+        status: row.rsvp_status!,
+      });
+    }
   }
-  return results;
+  return Array.from(householdMap.values());
 }
 
 export async function confirmHousehold(
@@ -586,34 +641,6 @@ export async function deleteGuest(id: number): Promise<boolean> {
     );
     return true;
   });
-}
-
-// ---------------------------------------------------------------------------
-// Legacy RSVPs (read-only, preserved from original system)
-// ---------------------------------------------------------------------------
-
-export async function getLegacyRsvps(): Promise<RsvpRecord[]> {
-  const rows = await query<{
-    id: string;
-    full_name: string;
-    attending: boolean;
-    guest_count: number;
-    meal_choice: string;
-    song_request: string;
-    message: string;
-    created_at: Date;
-  }>("SELECT * FROM legacy_rsvps ORDER BY created_at DESC, id DESC");
-
-  return rows.map((row) => ({
-    id: Number(row.id),
-    fullName: row.full_name,
-    attending: row.attending,
-    guestCount: row.guest_count,
-    mealChoice: row.meal_choice,
-    songRequest: row.song_request,
-    message: row.message,
-    createdAt: row.created_at.toISOString(),
-  }));
 }
 
 // ---------------------------------------------------------------------------
