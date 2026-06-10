@@ -6,7 +6,6 @@ export default defineConfig({
     globals: false,
     environment: "node",
     globalSetup: ["./lib/test-setup-global.ts"],
-    setupFiles: ["./lib/test-setup.ts"],
     alias: {
       "@": path.resolve(__dirname, "."),
     },

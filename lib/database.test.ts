@@ -1,7 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { query } from "./db";
 
 const DB_AVAILABLE = Boolean(process.env.DATABASE_URL);
 const describeDb = DB_AVAILABLE ? describe : describe.skip;
+
+// Truncate all tables before each test for isolation (only when DB is available).
+beforeEach(async () => {
+  if (!DB_AVAILABLE) return;
+  await query(
+    "TRUNCATE TABLE invited_guests, households, settings, legacy_rsvps RESTART IDENTITY CASCADE",
+  );
+});
 import {
   areRsvpsOpen,
   confirmHousehold,
