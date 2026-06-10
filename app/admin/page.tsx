@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HouseholdManager } from "./household-manager";
+import { AdminAutoRefresh } from "./auto-refresh";
 import { logout, toggleRsvps } from "./actions";
 import { requireAdmin } from "@/lib/auth";
 import {
@@ -51,6 +52,7 @@ export default async function AdminPage({
           <h1>RSVP Dashboard</h1>
         </div>
         <div className="admin-actions">
+          <AdminAutoRefresh />
           <Link className="button button-secondary button-small" href="/">
             View site
           </Link>
