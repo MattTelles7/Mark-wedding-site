@@ -57,7 +57,7 @@ export function AdminAutoRefresh() {
       >
         ↻
       </span>
-      <span className="admin-refresh-countdown">{countdown}s</span>
+      <span className="admin-refresh-countdown">Refresh {countdown}s</span>
     </button>
   );
 }
