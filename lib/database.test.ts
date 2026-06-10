@@ -1,186 +1,122 @@
-import Database from "better-sqlite3";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
-import { WeddingDatabase } from "./database";
+import { beforeEach, describe, expect, it } from "vitest";
+import { query } from "./db";
 
-const openDatabases: WeddingDatabase[] = [];
-const temporaryDirectories: string[] = [];
+const DB_AVAILABLE = Boolean(process.env.DATABASE_URL);
+const describeDb = DB_AVAILABLE ? describe : describe.skip;
 
-function createDatabase(filename = ":memory:") {
-  const database = new WeddingDatabase(filename);
-  openDatabases.push(database);
-  return database;
-}
-
-afterEach(() => {
-  for (const database of openDatabases.splice(0)) {
-    database.close();
-  }
-
-  for (const directory of temporaryDirectories.splice(0)) {
-    rmSync(directory, { recursive: true, force: true });
-  }
+// Truncate all tables before each test for isolation (only when DB is available).
+beforeEach(async () => {
+  if (!DB_AVAILABLE) return;
+  await query(
+    "TRUNCATE TABLE invited_guests, households, settings RESTART IDENTITY CASCADE",
+  );
 });
+import {
+  areRsvpsOpen,
+  confirmHousehold,
+  createGuest,
+  createHousehold,
+  createHouseholdWithGuests,
+  deleteGuest,
+  deleteHousehold,
+  getHouseholdSummary,
+  getHouseholds,
+  searchPublicHouseholds,
+  setHouseholdLocked,
+  setRsvpsOpen,
+  updateGuest,
+} from "./database";
 
-describe("WeddingDatabase migrations", () => {
-  it("preserves legacy RSVP rows while adding the household schema", () => {
-    const directory = mkdtempSync(
-      path.join(tmpdir(), "wedding-rsvp-migration-"),
-    );
-    temporaryDirectories.push(directory);
-    const filename = path.join(directory, "app.db");
-    const legacyDatabase = new Database(filename);
-    legacyDatabase.exec(`
-      CREATE TABLE rsvps (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        full_name TEXT NOT NULL CHECK(length(full_name) BETWEEN 2 AND 120),
-        attending INTEGER NOT NULL CHECK(attending IN (0, 1)),
-        guest_count INTEGER NOT NULL CHECK(guest_count BETWEEN 0 AND 10),
-        meal_choice TEXT NOT NULL,
-        song_request TEXT NOT NULL DEFAULT '',
-        message TEXT NOT NULL DEFAULT '',
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CHECK (
-          (attending = 1 AND guest_count BETWEEN 1 AND 10)
-          OR (attending = 0 AND guest_count = 0)
-        )
-      );
-      INSERT INTO rsvps (
-        full_name,
-        attending,
-        guest_count,
-        meal_choice
-      ) VALUES ('Legacy Guest', 1, 1, 'chicken');
-    `);
-    legacyDatabase.close();
-
-    const database = createDatabase(filename);
-
-    expect(database.getSchemaVersion()).toBe(1);
-    expect(database.getLegacyRsvps()).toHaveLength(1);
-    expect(database.getLegacyRsvps()[0].fullName).toBe("Legacy Guest");
-    expect(database.areRsvpsOpen()).toBe(false);
-  });
-
-  it("can run migrations repeatedly without changing existing data", () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "wedding-rsvp-repeat-"));
-    temporaryDirectories.push(directory);
-    const filename = path.join(directory, "app.db");
-    const first = createDatabase(filename);
-    const householdId = first.createHousehold({
-      householdName: "The Wolfe Family",
-      searchLastName: "Wolfe",
-    });
-    const guestId = first.createGuest(householdId, {
-      firstName: "Mark",
-      lastName: "Wolfe",
-    });
-    first.updateGuest(guestId, {
-      firstName: "Mark",
-      lastName: "Wolfe",
-      status: "attending",
-      notes: "Preserve this note",
-    });
-    first.setHouseholdLocked(householdId, true);
-    first.close();
-    openDatabases.splice(openDatabases.indexOf(first), 1);
-
-    const reopened = createDatabase(filename);
-
-    expect(reopened.getSchemaVersion()).toBe(1);
-    const [household] = reopened.getHouseholds();
-    expect(household).toMatchObject({
-      householdName: "The Wolfe Family",
-      searchLastName: "Wolfe",
-      isLocked: true,
-    });
-    expect(household.guests[0]).toMatchObject({
-      firstName: "Mark",
-      lastName: "Wolfe",
-      status: "attending",
-      notes: "Preserve this note",
-    });
+describeDb("settings", () => {
+  it("starts with RSVPs closed and can toggle", async () => {
+    expect(await areRsvpsOpen()).toBe(false);
+    await setRsvpsOpen(true);
+    expect(await areRsvpsOpen()).toBe(true);
+    await setRsvpsOpen(false);
+    expect(await areRsvpsOpen()).toBe(false);
   });
 });
 
-describe("household RSVP workflow", () => {
-  it("requires a complete response and locks a household atomically", () => {
-    const database = createDatabase();
-    const householdId = database.createHousehold({
+describeDb("household RSVP workflow", () => {
+  it("requires a complete response and locks a household atomically", async () => {
+    const householdId = await createHousehold({
       householdName: "The Nelson Family",
       searchLastName: "Nelson",
       contactEmail: "private@example.com",
     });
-    const firstGuestId = database.createGuest(householdId, {
+    const firstGuestId = await createGuest(householdId, {
       firstName: "Guerdithe",
       lastName: "Nelson",
     });
-    const secondGuestId = database.createGuest(householdId, {
+    const secondGuestId = await createGuest(householdId, {
       firstName: "Guest",
       lastName: "Nelson",
     });
 
+    // RSVPs closed
     expect(
-      database.confirmHousehold(householdId, [
+      await confirmHousehold(householdId, [
         { guestId: firstGuestId, status: "attending" },
         { guestId: secondGuestId, status: "declined" },
       ]),
     ).toEqual({ success: false, code: "closed" });
 
-    database.setRsvpsOpen(true);
+    await setRsvpsOpen(true);
+
+    // Incomplete response
     expect(
-      database.confirmHousehold(householdId, [
+      await confirmHousehold(householdId, [
         { guestId: firstGuestId, status: "attending" },
       ]),
     ).toEqual({ success: false, code: "invalid_responses" });
 
-    let household = database.getHouseholds()[0];
+    let household = (await getHouseholds())[0];
     expect(household.isLocked).toBe(false);
-    expect(household.guests.map((guest) => guest.status)).toEqual([
+    expect(household.guests.map((g) => g.status)).toEqual([
       "pending",
       "pending",
     ]);
 
+    // Valid response
     expect(
-      database.confirmHousehold(householdId, [
+      await confirmHousehold(householdId, [
         { guestId: firstGuestId, status: "attending" },
         { guestId: secondGuestId, status: "declined" },
       ]),
     ).toEqual({ success: true });
 
-    household = database.getHouseholds()[0];
+    household = (await getHouseholds())[0];
     expect(household.isLocked).toBe(true);
     expect(household.submittedAt).not.toBeNull();
-    expect(household.guests.map((guest) => guest.status)).toEqual([
+    expect(household.guests.map((g) => g.status)).toEqual([
       "attending",
       "declined",
     ]);
+
+    // Already locked
     expect(
-      database.confirmHousehold(householdId, [
+      await confirmHousehold(householdId, [
         { guestId: firstGuestId, status: "declined" },
         { guestId: secondGuestId, status: "declined" },
       ]),
     ).toEqual({ success: false, code: "locked" });
   });
 
-  it("uses exact normalized surname search and omits private fields", () => {
-    const database = createDatabase();
-    const householdId = database.createHousehold({
+  it("uses exact normalized surname search and omits private fields", async () => {
+    const householdId = await createHousehold({
       householdName: "The Wolfe Family",
       searchLastName: "  Wolfe ",
       contactEmail: "private@example.com",
       contactPhone: "555-0100",
     });
-    database.createGuest(householdId, {
+    await createGuest(householdId, {
       firstName: "Mark",
       lastName: "Wolfe",
       notes: "Private admin note",
     });
 
-    expect(database.searchPublicHouseholds("wolf")).toEqual([]);
-    const results = database.searchPublicHouseholds(" WOLFE ");
+    expect(await searchPublicHouseholds("wolf")).toEqual([]);
+    const results = await searchPublicHouseholds(" WOLFE ");
 
     expect(results).toHaveLength(1);
     expect(results[0].guests[0]).toEqual({
@@ -193,29 +129,28 @@ describe("household RSVP workflow", () => {
     expect(results[0].guests[0]).not.toHaveProperty("notes");
   });
 
-  it("reports individual and household dashboard counts", () => {
-    const database = createDatabase();
-    const householdId = database.createHousehold({
+  it("reports individual and household dashboard counts", async () => {
+    const householdId = await createHousehold({
       householdName: "The Wolfe Family",
       searchLastName: "Wolfe",
     });
-    const firstGuestId = database.createGuest(householdId, {
+    const firstGuestId = await createGuest(householdId, {
       firstName: "Mark",
       lastName: "Wolfe",
     });
-    database.createGuest(householdId, {
+    await createGuest(householdId, {
       firstName: "Guest",
       lastName: "Wolfe",
       status: "declined",
     });
-    database.updateGuest(firstGuestId, {
+    await updateGuest(firstGuestId, {
       firstName: "Mark",
       lastName: "Wolfe",
       status: "attending",
     });
-    database.setHouseholdLocked(householdId, true);
+    await setHouseholdLocked(householdId, true);
 
-    expect(database.getHouseholdSummary()).toEqual({
+    expect(await getHouseholdSummary()).toEqual({
       totalInvited: 2,
       pending: 0,
       attending: 1,
@@ -223,5 +158,44 @@ describe("household RSVP workflow", () => {
       lockedHouseholds: 1,
       totalHouseholds: 1,
     });
+  });
+
+  it("will not delete the final invited person from a household", async () => {
+    await createHouseholdWithGuests({
+      householdName: "The Wolfe Family",
+      searchLastName: "Wolfe",
+      guests: [{ firstName: "Mark", lastName: "Wolfe" }],
+    });
+    const household = (await getHouseholds())[0];
+    expect(await deleteGuest(household.guests[0].id)).toBe(false);
+    expect((await getHouseholds())[0].guests).toHaveLength(1);
+  });
+
+  it("deletes additional people and cascades a confirmed household deletion", async () => {
+    const householdId = await createHouseholdWithGuests({
+      householdName: "The Wolfe Family",
+      searchLastName: "Wolfe",
+      guests: [
+        { firstName: "Mark", lastName: "Wolfe" },
+        { firstName: "Guerdithe", lastName: "Wolfe" },
+      ],
+    });
+    const household = (await getHouseholds())[0];
+    const secondGuestId = household.guests[1].id;
+    expect(await deleteGuest(secondGuestId)).toBe(true);
+    expect((await getHouseholds())[0].guests).toHaveLength(1);
+
+    await deleteHousehold(householdId);
+    expect(await getHouseholds()).toEqual([]);
+  });
+
+  it("requires at least one guest when creating a household with guests", async () => {
+    await expect(
+      createHouseholdWithGuests({
+        householdName: "Empty Household",
+        searchLastName: "Empty",
+        guests: [],
+      }),
+    ).rejects.toThrow("at least one invited person");
   });
 });

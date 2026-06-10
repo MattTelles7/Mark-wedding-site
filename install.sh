@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 INSTALL_DIR="${INSTALL_DIR:-/opt/wedding-rsvp}"
-REPO_URL="${REPO_URL:-https://github.com/MattTelles-7/Mark-wedding-site.git}"
+REPO_URL="${REPO_URL:-https://github.com/MattTelles7/Mark-wedding-site.git}"
 BRANCH="main"
 INSTALL_MODE="fresh install"
 
@@ -71,22 +71,12 @@ assert_target_preserves_data() {
 
   while IFS= read -r path; do
     case "$path" in
-      data)
-        echo "Refusing to deploy: origin/$BRANCH tracks protected data path $path." >&2
-        exit 1
-        ;;
-      .env | data/app.db)
+      .env)
         echo "Refusing to deploy: origin/$BRANCH tracks protected file $path." >&2
         exit 1
         ;;
-      data/*)
-        if [[ "$path" != "data/.gitkeep" ]]; then
-          echo "Refusing to deploy: origin/$BRANCH tracks protected data path $path." >&2
-          exit 1
-        fi
-        ;;
     esac
-  done < <(run_git ls-tree -r --name-only "origin/$BRANCH" -- .env data)
+  done < <(run_git ls-tree -r --name-only "origin/$BRANCH" -- .env)
 }
 
 assert_head_preserves_data() {
@@ -95,22 +85,12 @@ assert_head_preserves_data() {
 
   while IFS= read -r path; do
     case "$path" in
-      data)
-        echo "Refusing to deploy: target branch tracks protected data path $path." >&2
-        exit 1
-        ;;
-      .env | data/app.db)
+      .env)
         echo "Refusing to deploy: target branch tracks protected file $path." >&2
         exit 1
         ;;
-      data/*)
-        if [[ "$path" != "data/.gitkeep" ]]; then
-          echo "Refusing to deploy: target branch tracks protected data path $path." >&2
-          exit 1
-        fi
-        ;;
     esac
-  done < <("${SUDO[@]}" git -C "$repo_dir" ls-tree -r --name-only HEAD -- .env data)
+  done < <("${SUDO[@]}" git -C "$repo_dir" ls-tree -r --name-only HEAD -- .env)
 }
 
 assert_clean_checkout() {
@@ -149,8 +129,8 @@ assert_compose_file_safe() {
     exit 1
   fi
 
-  if ! grep -Eq '^[[:space:]]*-[[:space:]]*\.\/data:\/app\/data[[:space:]]*$' "$compose_file"; then
-    echo "Refusing to deploy: docker-compose.yml must bind ./data to /app/data." >&2
+  if ! grep -q "postgres_data" "$compose_file"; then
+    echo "Refusing to deploy: docker-compose.yml must define the postgres_data volume." >&2
     exit 1
   fi
 }
@@ -198,17 +178,10 @@ adopt_existing_non_git_install() {
     "${SUDO[@]}" mv "$backup_dir/.env" "$INSTALL_DIR/.env"
   fi
 
-  if [[ -d "$backup_dir/data" ]]; then
-    if [[ -d "$INSTALL_DIR/data" ]]; then
-      "${SUDO[@]}" mv "$INSTALL_DIR/data" "$backup_dir/repository-data-template"
-    fi
-    "${SUDO[@]}" mv "$backup_dir/data" "$INSTALL_DIR/data"
-  fi
-
   "${SUDO[@]}" rmdir "$temp_dir"
 
   echo "Previous non-Git app files moved to $backup_dir."
-  echo "Existing .env and data directory were moved into the new Git checkout."
+  echo "Existing .env was moved into the new Git checkout."
 }
 
 if ! command -v apt-get >/dev/null 2>&1; then
@@ -275,9 +248,6 @@ fi
 assert_target_preserves_data
 assert_safe_deployment_layout
 
-"${SUDO[@]}" mkdir -p "$INSTALL_DIR/data"
-"${SUDO[@]}" chown -R 1001:1001 "$INSTALL_DIR/data"
-
 ENV_FILE="$INSTALL_DIR/.env"
 ENV_CREATED=false
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -317,10 +287,44 @@ if [[ -z "$(read_env_value "SESSION_SECRET")" ]]; then
   set_env_value "SESSION_SECRET" "$(openssl rand -hex 32)"
 fi
 
+# Postgres environment variables
+GENERATED_POSTGRES_CREDS=false
+
+if [[ -z "$(read_env_value "POSTGRES_DB")" ]]; then
+  set_env_value "POSTGRES_DB" "wedding_rsvp"
+  GENERATED_POSTGRES_CREDS=true
+fi
+
+if [[ -z "$(read_env_value "POSTGRES_USER")" ]]; then
+  set_env_value "POSTGRES_USER" "wedding_rsvp"
+  GENERATED_POSTGRES_CREDS=true
+fi
+
+if [[ -z "$(read_env_value "POSTGRES_PASSWORD")" ]]; then
+  set_env_value "POSTGRES_PASSWORD" "$(openssl rand -hex 24)"
+  GENERATED_POSTGRES_CREDS=true
+fi
+
+if [[ -z "$(read_env_value "DATABASE_URL")" ]]; then
+  POSTGRES_PASS_VALUE="$(read_env_value "POSTGRES_PASSWORD")"
+  POSTGRES_DB_VALUE="$(read_env_value "POSTGRES_DB")"
+  POSTGRES_USER_VALUE="$(read_env_value "POSTGRES_USER")"
+  set_env_value "DATABASE_URL" \
+    "postgresql://${POSTGRES_USER_VALUE}:${POSTGRES_PASS_VALUE}@postgres:5432/${POSTGRES_DB_VALUE}"
+  GENERATED_POSTGRES_CREDS=true
+fi
+
 if [[ -n "$GENERATED_ADMIN_PASSWORD" ]]; then
   echo
   echo "Generated admin password: ${GENERATED_ADMIN_PASSWORD}"
   echo "Store this password now. It will not be printed by future updates."
+fi
+
+if [[ "$GENERATED_POSTGRES_CREDS" == "true" ]]; then
+  echo
+  echo "Postgres credentials were generated or updated in $ENV_FILE."
+  echo "DATABASE_URL has been set for the app container."
+  echo "Never delete the postgres_data Docker volume. Backups are via Proxmox VM snapshots."
 fi
 
 echo "Building and starting the application..."

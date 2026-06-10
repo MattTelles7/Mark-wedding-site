@@ -258,6 +258,37 @@ h3,
   font-size: 0.62rem;
 }
 
+.admin-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.admin-refresh-icon {
+  display: inline-block;
+  font-size: 1em;
+  line-height: 1;
+}
+
+@keyframes admin-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-refresh-icon.admin-refresh-spinning {
+  animation: admin-spin 0.5s ease-in-out;
+}
+
+.admin-refresh-countdown {
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  opacity: 0.65;
+}
+
 .hero-photo-wrap {
   position: absolute;
   inset: 0;

@@ -6,7 +6,62 @@ All notable changes to this project are documented here.
 
 ### Added
 
-- Confirmed ceremony address: St. Joseph's Catholic Church,
+- PostgreSQL 17 database service in Docker Compose with named volume
+  `postgres_data` (never deleted by installer or updater)
+- `lib/db.ts` — lazy Postgres pool singleton with `query`, `queryOne`,
+  `withTransaction`, and `checkDatabaseConnection` helpers
+- `lib/migrate.ts` — forward-only, idempotent migration runner tracked by name
+  in a `migrations` table
+- `scripts/migrate.ts` — CLI migration runner invoked by `npm run db:migrate`
+- `instrumentation.ts` — Next.js startup hook that runs migrations before the
+  app serves traffic
+- `vitest.config.ts` — Vitest configuration with global setup for migrations and
+  per-test table truncation; database integration tests skip gracefully without
+  `DATABASE_URL`
+- `/api/health` now checks Postgres connectivity with `SELECT 1` and returns
+  `{ status: "ok", database: "ok" }` or `503` if unreachable
+- CI workflow now starts a Postgres 17 service container and runs migrations
+  before tests
+
+### Changed
+
+- All database code rewritten from synchronous SQLite to async Postgres (`pg`)
+- `lib/database.ts` — complete rewrite as async functions; all queries use
+  `$1, $2, ...` parameterization; `confirmHousehold` uses
+  `SELECT ... FOR UPDATE` for concurrency safety
+- `lib/admin-service.ts` — `AdminHouseholdRepository` methods now return
+  `Promise`; all four service functions are async
+- `app/admin/page.tsx`, `app/rsvp/page.tsx` — added `await` to all DB calls
+- `app/admin/actions.ts`, `app/rsvp/actions.ts` — all DB calls now awaited
+- `app/admin/export/route.ts` — `getHouseholdExportRows()` awaited
+- `docker-compose.yml` — added `postgres` service; removed `./data:/app/data`
+  bind mount; app depends on postgres health check
+- `Dockerfile` — removed `python3 make g++` build tools (no longer needed)
+- `next.config.ts` — removed `serverExternalPackages: ["better-sqlite3"]`
+- `install.sh` — generates `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`,
+  `DATABASE_URL` if missing; removed SQLite data-dir assertions; never runs
+  `docker compose down -v`
+- `update.sh` — removed SQLite data-dir check; asserts `postgres_data` volume
+  presence; prints data-preservation warning
+- `.env.example` — added Postgres env vars; removed `DATABASE_PATH`
+- `package.json` — removed `better-sqlite3`, added `pg@8.16.0`,
+  `@types/pg@8.11.14`, `tsx@4.19.4`; added `db:migrate` script
+- `lib/database.test.ts`, `lib/admin-service.test.ts`,
+  `app/admin/actions.test.ts` — fully rewritten for async Postgres; unit tests
+  use mock repositories; integration tests skip without `DATABASE_URL`
+
+### Removed
+
+- `better-sqlite3` and `@types/better-sqlite3` runtime dependencies
+- `WeddingDatabase` class and all synchronous SQLite code
+- `./data:/app/data` Docker bind mount
+
+### Fixed
+
+- Admin login crash: previously the synchronous SQLite `WeddingDatabase` class
+  failed during async Next.js request processing; all database access is now
+  properly async and the admin session flow is stable
+
   7536 Church Ln, West Harrison, IN 47060 — displayed beneath the venue
   on the homepage schedule and event card
 

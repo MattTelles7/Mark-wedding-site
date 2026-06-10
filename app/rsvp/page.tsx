@@ -9,9 +9,9 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function RsvpPage() {
+export default async function RsvpPage() {
   const site = getSiteConfig();
-  const rsvpsOpen = areRsvpsOpen();
+  const rsvpsOpen = await areRsvpsOpen();
 
   return (
     <main className="page-shell">
@@ -43,7 +43,7 @@ export default function RsvpPage() {
           <RsvpLookup />
         ) : (
           <div className="closed-rsvp">
-            <span aria-hidden="true">M&G</span>
+            <span aria-hidden="true">{site.monogram}</span>
             <strong>Responses are currently closed</strong>
           </div>
         )}
