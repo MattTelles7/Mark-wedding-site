@@ -91,6 +91,9 @@ and the production build. Update the project memory files when state changes.
 - Backups are handled by the project owner through Proxmox VM snapshots. No
   app-level backup script exists or should be added.
 - `DATABASE_URL` must be set in `.env`. The app fails loudly at startup if missing.
+- Bulk imports are add-only. Import features may read existing households and
+  invited guests for duplicate detection, but must never delete rows or update
+  existing household/guest data as part of an import.
 
 ## Admin UX
 
@@ -102,6 +105,9 @@ and the production build. Update the project memory files when state changes.
   Do not show a normal Save button when autosave is the established behavior.
 - Admin controls must remain usable without horizontal scrolling on a narrow
   phone viewport.
+- Admin spreadsheet uploads must be `.xlsx` only, parsed server-side, discarded
+  after processing, and shown with clear preview/import summaries and row-level
+  errors before data is inserted.
 
 ## Content
 

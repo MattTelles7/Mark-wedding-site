@@ -27,6 +27,7 @@ Do not use `main` as the active development branch.
 - Password-protected admin dashboard
 - Blur-based autosave with visible admin save status
 - Six response summaries, household filtering, editing, and CSV export
+- Admin-only `.xlsx` bulk import for households and invited people
 - Automatic schema migrations on startup (forward-only, idempotent)
 - Docker Compose deployment on port `3000`
 - Repeatable install and update scripts
@@ -79,6 +80,41 @@ people, then open RSVPs when the invitation list is ready.
 The admin creates each household together with its first invited person.
 Household and person edits save when a field loses focus. Submitted households
 remain editable by the admin and can be reopened for public submission.
+
+## Admin XLSX Bulk Import
+
+The admin dashboard includes **Bulk Import Families** above manual household
+entry.
+
+1. Click **Download Template**.
+2. Fill out the `Guests` sheet. It is one row per invited person.
+3. Upload the completed `.xlsx`.
+4. Click **Preview Import**.
+5. Review households to create, existing households matched, guests to create,
+   duplicate guests skipped, invalid rows, and warnings.
+6. Click **Import Valid Rows**.
+
+The template has three sheets: `Guests`, `Instructions`, and `Example`. `Guests`
+is first and has these columns:
+
+| Column           | Required? | Meaning                                              |
+| ---------------- | --------- | ---------------------------------------------------- |
+| Last Name        | Yes       | Household/family search last name                    |
+| Household Name   | No        | Display name; blank becomes `The [Last Name] Family` |
+| First Name       | Yes       | Invited person's first name                          |
+| Person Last Name | No        | Invited person's last name; blank uses `Last Name`   |
+| Contact Email    | No        | Household-level contact email                        |
+| Contact Phone    | No        | Household-level contact phone                        |
+| Admin Notes      | No        | Private note for this invited person                 |
+
+The import is **add-only**. It never deletes existing households/guests, never
+updates existing household contact data, and never updates existing guest notes
+or RSVP statuses. Existing households are matched by normalized `Household Name`
+and `Last Name`. Duplicate people are detected by same household, same first
+name, and same last name and are skipped.
+
+Uploads are parsed in memory and not stored on disk. Only `.xlsx` files are
+accepted, with a 10 MB upload limit and 5,000 data-row limit.
 
 ## Quality Checks
 
