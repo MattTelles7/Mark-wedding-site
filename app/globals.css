@@ -261,12 +261,13 @@ h3,
 .admin-refresh-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3em;
+  gap: 0.35em;
 }
 
-.admin-refresh-btn .admin-refresh-icon,
-.admin-refresh-spinning {
+.admin-refresh-icon {
   display: inline-block;
+  font-size: 1em;
+  line-height: 1;
 }
 
 @keyframes admin-spin {
@@ -278,8 +279,14 @@ h3,
   }
 }
 
-.admin-refresh-spinning {
-  animation: admin-spin 0.5s linear;
+.admin-refresh-icon.admin-refresh-spinning {
+  animation: admin-spin 0.5s ease-in-out;
+}
+
+.admin-refresh-countdown {
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  opacity: 0.65;
 }
 
 .hero-photo-wrap {

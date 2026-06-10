@@ -3,41 +3,61 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const INTERVAL_MS = 10_000;
+const REFRESH_INTERVAL = 10;
 
 export function AdminAutoRefresh() {
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [spinning, setSpinning] = useState(false);
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
+  const remainingRef = useRef(REFRESH_INTERVAL);
+  const routerRef = useRef(router);
 
-  const refresh = useCallback(() => {
-    setRefreshing(true);
-    router.refresh();
-    // Clear the visual indicator after a short delay
-    setTimeout(() => setRefreshing(false), 600);
-  }, [router]);
-
-  // Auto-refresh every 10 seconds while the tab is visible
+  // Keep routerRef in sync without triggering re-renders
   useEffect(() => {
-    timerRef.current = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        refresh();
-      }
-    }, INTERVAL_MS);
+    routerRef.current = router;
+  });
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [refresh]);
+  const doRefresh = useCallback(() => {
+    remainingRef.current = REFRESH_INTERVAL;
+    setCountdown(REFRESH_INTERVAL);
+    setSpinning(true);
+    routerRef.current.refresh();
+    setTimeout(() => setSpinning(false), 500);
+  }, []);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+
+      remainingRef.current -= 1;
+      setCountdown(remainingRef.current);
+
+      if (remainingRef.current <= 0) {
+        remainingRef.current = REFRESH_INTERVAL;
+        setCountdown(REFRESH_INTERVAL);
+        setSpinning(true);
+        routerRef.current.refresh();
+        setTimeout(() => setSpinning(false), 500);
+      }
+    }, 1000);
+
+    return () => clearInterval(tick);
+  }, []);
 
   return (
     <button
-      className={`button button-secondary button-small admin-refresh-btn${refreshing ? " admin-refresh-spinning" : ""}`}
+      className="button button-secondary button-small admin-refresh-btn"
       type="button"
-      title="Refresh dashboard data"
-      onClick={refresh}
+      title={`Auto-refreshes in ${countdown}s — click to refresh now`}
+      onClick={doRefresh}
     >
-      ↻ Refresh
+      <span
+        className={`admin-refresh-icon${spinning ? " admin-refresh-spinning" : ""}`}
+        aria-hidden="true"
+      >
+        ↻
+      </span>
+      <span className="admin-refresh-countdown">{countdown}s</span>
     </button>
   );
 }
