@@ -6,7 +6,7 @@ import {
   areRsvpsOpen,
   getHouseholds,
   getHouseholdSummary,
-  getRsvps,
+  getLegacyRsvps,
 } from "@/lib/database";
 
 export const metadata = {
@@ -36,12 +36,12 @@ export default async function AdminPage({
   await requireAdmin();
   const { q = "" } = await searchParams;
   const filter = q.slice(0, 100);
-  const [rsvpsOpen, summary, households, legacyRsvps] = [
+  const [rsvpsOpen, summary, households, legacyRsvps] = await Promise.all([
     areRsvpsOpen(),
     getHouseholdSummary(),
     getHouseholds(filter),
-    getRsvps(),
-  ];
+    getLegacyRsvps(),
+  ]);
 
   return (
     <main className="admin-shell">

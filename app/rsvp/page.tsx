@@ -9,9 +9,9 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function RsvpPage() {
+export default async function RsvpPage() {
   const site = getSiteConfig();
-  const rsvpsOpen = areRsvpsOpen();
+  const rsvpsOpen = await areRsvpsOpen();
 
   return (
     <main className="page-shell">

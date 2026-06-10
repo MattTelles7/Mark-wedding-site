@@ -100,7 +100,7 @@ export async function logout() {
 
 export async function toggleRsvps(formData: FormData) {
   await requireAdmin();
-  setRsvpsOpen(text(formData, "open") === "true");
+  await setRsvpsOpen(text(formData, "open") === "true");
   revalidateRsvpViews();
 }
 
@@ -110,7 +110,7 @@ export async function createHouseholdAction(
   await requireAdmin();
 
   try {
-    const result = createAdminHousehold(adminRepository, input);
+    const result = await createAdminHousehold(adminRepository, input);
     if (result.success) {
       revalidateRsvpViews();
     }
@@ -137,7 +137,7 @@ export async function autosaveHouseholdAction(
   }
 
   try {
-    const result = saveAdminHousehold(adminRepository, input);
+    const result = await saveAdminHousehold(adminRepository, input);
     if (result.success) {
       revalidateRsvpViews();
     }
@@ -156,7 +156,7 @@ export async function removeHouseholdAction(
   }
 
   try {
-    deleteHousehold(householdId);
+    await deleteHousehold(householdId);
     revalidateRsvpViews();
     return { success: true, data: undefined };
   } catch (error) {
@@ -183,7 +183,7 @@ export async function createGuestAction(
   }
 
   try {
-    const result = createAdminGuest(adminRepository, householdId, input);
+    const result = await createAdminGuest(adminRepository, householdId, input);
     if (result.success) {
       revalidateRsvpViews();
     }
@@ -211,7 +211,7 @@ export async function autosaveGuestAction(
   }
 
   try {
-    const result = saveAdminGuest(adminRepository, guestId, input);
+    const result = await saveAdminGuest(adminRepository, guestId, input);
     if (result.success) {
       revalidateRsvpViews();
     }
@@ -230,7 +230,7 @@ export async function removeGuestAction(
   }
 
   try {
-    const removed = deleteGuest(guestId);
+    const removed = await deleteGuest(guestId);
     if (!removed) {
       return {
         success: false,
@@ -255,7 +255,7 @@ export async function setHouseholdSubmissionAction(
   }
 
   try {
-    setHouseholdLocked(householdId, isLocked);
+    await setHouseholdLocked(householdId, isLocked);
     revalidateRsvpViews();
     return { success: true, data: undefined };
   } catch (error) {
