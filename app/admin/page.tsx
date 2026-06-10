@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HouseholdManager } from "./household-manager";
 import { AdminAutoRefresh } from "./auto-refresh";
+import { BulkImportFamilies } from "./bulk-import-families";
 import { logout, toggleRsvps } from "./actions";
 import { requireAdmin } from "@/lib/auth";
 import {
@@ -106,6 +107,8 @@ export default async function AdminPage({
           <strong>{summary.totalHouseholds}</strong>
         </article>
       </section>
+
+      <BulkImportFamilies />
 
       <HouseholdManager initialHouseholds={households} filter={filter} />
     </main>

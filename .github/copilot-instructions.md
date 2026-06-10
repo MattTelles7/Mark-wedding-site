@@ -35,6 +35,9 @@ Docker Compose stack: `app` + `postgres` containers. One Ubuntu/Debian VM.
 - Admin: `app/admin/` (login at `/admin`, household management dashboard)
 - Server Actions in `app/rsvp/actions.ts` and `app/admin/actions.ts`
 - Business logic: `lib/admin-service.ts`, `lib/admin-validation.ts`
+- Admin XLSX import: `app/admin/bulk-import-families.tsx`,
+  `app/admin/import/actions.ts`, `app/admin/import/template/route.ts`,
+  `lib/import-template.ts`, `lib/import-parser.ts`, `lib/import-service.ts`
 - Auth: `lib/auth.ts` — signed 8-hour session cookie, no user accounts
 - Database: `lib/database.ts` — async Postgres functions (no class, no ORM)
 - DB pool: `lib/db.ts` — lazy Pool singleton, `query`, `queryOne`, `withTransaction`
@@ -43,7 +46,7 @@ Docker Compose stack: `app` + `postgres` containers. One Ubuntu/Debian VM.
 - Site config: `lib/site.ts` — reads wedding content from env vars, never hardcodes personal data
 - Rate limiting: `lib/rate-limit.ts` — intentionally in-memory (single process)
 
-**Key tables:** `households`, `invited_guests`, `settings` (contains `rsvps_open`), legacy `legacy_rsvps` (read-only, preserved)
+**Key tables:** `households`, `invited_guests`, `settings` (contains `rsvps_open`)
 
 ## Git Workflow
 
@@ -79,6 +82,12 @@ Use Conventional Commits. Keep each commit to one logical change.
 
 **CSV formula injection prevention.** Values that can trigger spreadsheet formulas are prefixed in `lib/csv.ts`.
 
+**XLSX bulk imports are add-only.** Admin imports may create missing households
+and invited people, skip duplicate people, and report invalid rows. They must
+never update or delete existing households/guests. Matching is normalized
+Household Name + Last Name; duplicate people are same household + first name +
+last name.
+
 **Security rules:**
 
 - All admin mutations and CSV export are protected server-side
@@ -103,6 +112,7 @@ cp .env.example .env
 | `POSTGRES_DB`                            | Postgres database name (used by docker-compose)                 |
 | `POSTGRES_USER`                          | Postgres user (used by docker-compose)                          |
 | `POSTGRES_PASSWORD`                      | Postgres password (used by docker-compose)                      |
+| `NEXT_SERVER_ACTION_ALLOWED_ORIGINS`     | Public proxy hostnames allowed to submit server actions         |
 | `WEDDING_DATE_ISO`, `COUPLE_NAMES`, etc. | Wedding display content                                         |
 
 ## Deployment

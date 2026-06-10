@@ -31,7 +31,10 @@
 - [x] Add confirmed reception time and location.
 - [x] Remove registry section, nav link, and all registry wording.
 - [x] Add favicon and Apple touch icon from couple photo.
-- [ ] Import the real invitation household and guest list.
+- [x] Add admin `.xlsx` bulk import template, preview, duplicate detection, and
+      add-only final import.
+- [ ] Import the real invitation household and guest list using the admin bulk
+      import.
 - [ ] Test household and invited-person deletion through a real browser.
 - [ ] Confirm admin logout through a real browser.
 - [x] Deploy this feature to the Debian 13 VM and confirm health, admin login,

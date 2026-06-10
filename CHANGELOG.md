@@ -6,6 +6,14 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Admin-only `.xlsx` bulk import for households and invited guests:
+  - downloadable Excel template with `Guests`, `Instructions`, and `Example`
+    sheets
+  - server-side preview with row-level errors, warnings, duplicate detection,
+    households to create, existing households matched, and guests to create
+  - add-only final import that creates valid new households/guests, skips
+    duplicates, and never updates/deletes existing records
+  - 10 MB upload limit and 5,000 data-row guard
 - PostgreSQL 17 database service in Docker Compose with named volume
   `postgres_data` (never deleted by installer or updater)
 - `lib/db.ts` — lazy Postgres pool singleton with `query`, `queryOne`,

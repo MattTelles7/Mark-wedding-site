@@ -3,10 +3,11 @@
 ## Current Status
 
 - `develop` is the active integration branch.
-- `feature/postgres-migration` is the current in-progress branch.
 - The app has been migrated from SQLite to PostgreSQL.
 - Admin login crash was fixed by removing the SQLite dependency and ensuring
   all database calls are properly async.
+- Admin-only `.xlsx` bulk import for households and invited guests is available
+  from the dashboard.
 - All public pages remain unchanged in design.
 - Reception and ceremony details are confirmed and displayed correctly.
 - Registry section is permanently removed.
@@ -14,9 +15,9 @@
 
 ## Last Completed Feature
 
-Postgres migration: switched from SQLite (`better-sqlite3`) to PostgreSQL (`pg`)
-with Docker Compose postgres service, named volume `postgres_data`, automatic
-startup migrations via `instrumentation.ts`, and updated CI with Postgres service.
+Admin XLSX bulk import: admins can download a styled Excel template, upload a
+completed `.xlsx`, preview row-level errors/warnings/duplicates, and import valid
+rows into Postgres without updating or deleting existing records.
 
 ## Database
 
@@ -25,20 +26,22 @@ startup migrations via `instrumentation.ts`, and updated CI with Postgres servic
 - **Volume**: Docker named volume `postgres_data` (never delete)
 - **Migrations**: `lib/migrate.ts` — forward-only, idempotent, tracked by name in
   `migrations` table
-- **Migration 001**: Creates `migrations`, `settings`, `households`,
-  `invited_guests`, `legacy_rsvps` tables
+- **Migration 001**: Creates `settings`, `households`, and `invited_guests`
+  tables
+- **Migration 002**: Drops the unused `legacy_rsvps` table if present
 - **Old SQLite data**: Intentionally abandoned. No real production data existed at
   time of migration.
 
 ## Known Missing Content
 
 All ceremony and reception details are confirmed and displayed. No content is
-intentionally hidden or placeholder. The only remaining pre-launch work is
-importing the real invitation household/guest list and completing VM validation.
+intentionally hidden or placeholder. The only remaining pre-launch work is using
+the admin bulk import to load the real invitation household/guest list and
+completing VM validation.
 
 ## Pending Validation
 
-- Deploy `feature/postgres-migration` to Debian test VM.
+- Deploy `develop` to Debian test VM after the bulk import feature merges.
 - Verify postgres container healthy (`docker compose ps`).
 - Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
 - Verify admin login works with configured `ADMIN_PASSWORD`.
@@ -99,6 +102,10 @@ curl http://localhost:3000/api/health
 - Database pool + helpers: `lib/db.ts`
 - Migration runner: `lib/migrate.ts`
 - Migration CLI script: `scripts/migrate.ts`
+- XLSX import template/parser/service: `lib/import-template.ts`,
+  `lib/import-parser.ts`, `lib/import-service.ts`, `lib/import-types.ts`
+- Admin bulk import UI/actions/routes: `app/admin/bulk-import-families.tsx`,
+  `app/admin/import/actions.ts`, `app/admin/import/template/route.ts`
 - Startup hook: `instrumentation.ts`
 - Authentication: `lib/auth.ts`
 - Deployment scripts: `install.sh`, `update.sh`
@@ -139,12 +146,6 @@ Table `invited_guests`:
 - optional admin-only `notes`
 - `created_at` and `updated_at TIMESTAMPTZ`
 
-Table `legacy_rsvps`:
-
-- `id BIGSERIAL PRIMARY KEY`
-- Preserves free-form responses from the old RSVP system
-- Read-only; no new rows are inserted
-
 ## Decisions for Future Sessions
 
 - Wedding display content comes from runtime environment variables where practical.
@@ -161,6 +162,11 @@ Table `legacy_rsvps`:
 - The app uses signed, eight-hour admin session cookies rather than accounts.
 - Rate limiting is intentionally in-memory for the single-process deployment.
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
+- Admin `.xlsx` imports are add-only: existing households/guests are matched for
+  duplicate detection but never updated or deleted by import.
+- Import matching uses normalized Household Name + Last Name; duplicate guest
+  detection uses same household + same first name + same last name.
+- Template limits are `.xlsx` only, 10 MB maximum upload, 5,000 data rows.
 - Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`.
 - `ADMIN_PASSWORD` is the admin login password. `SESSION_SECRET` signs cookies and
   is never typed by the user.
