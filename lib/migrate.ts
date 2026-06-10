@@ -39,21 +39,14 @@ const migrations: Array<{ name: string; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_invited_guests_household
         ON invited_guests (household_id);
 
-      CREATE TABLE IF NOT EXISTS legacy_rsvps (
-        id          BIGSERIAL PRIMARY KEY,
-        full_name   TEXT    NOT NULL,
-        attending   BOOLEAN NOT NULL,
-        guest_count INTEGER NOT NULL,
-        meal_choice TEXT    NOT NULL DEFAULT '',
-        song_request TEXT   NOT NULL DEFAULT '',
-        message     TEXT    NOT NULL DEFAULT '',
-        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
       INSERT INTO settings (key, value)
       VALUES ('rsvps_open', 'false')
       ON CONFLICT (key) DO NOTHING;
     `,
+  },
+  {
+    name: "002_drop_legacy_rsvps",
+    sql: `DROP TABLE IF EXISTS legacy_rsvps;`,
   },
 ];
 

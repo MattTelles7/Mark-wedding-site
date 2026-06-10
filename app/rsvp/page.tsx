@@ -43,7 +43,7 @@ export default async function RsvpPage() {
           <RsvpLookup />
         ) : (
           <div className="closed-rsvp">
-            <span aria-hidden="true">M&G</span>
+            <span aria-hidden="true">{site.monogram}</span>
             <strong>Responses are currently closed</strong>
           </div>
         )}
