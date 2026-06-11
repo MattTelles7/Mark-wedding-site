@@ -16,10 +16,12 @@ const serverActionOrigins = (
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  serverExternalPackages: ["exceljs"],
   experimental: {
     serverActions: {
       allowedOrigins: serverActionOrigins,
-      bodySizeLimit: "10mb",
+      // The file validator enforces 10 MiB. Leave room for multipart metadata.
+      bodySizeLimit: "11mb",
     },
   },
   async headers() {

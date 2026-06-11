@@ -1,5 +1,37 @@
 # Project State
 
+## Agent Handoff Summary
+
+- **Read first**: `RULES.md` and this file are authoritative. Repository files
+  and current Git/GitHub state override stale chat memory or prior AI summaries.
+- **Stack**: Next.js App Router, TypeScript, Node.js 22, PostgreSQL 17 through
+  `pg`, Docker Compose, and the persistent `postgres_data` named volume.
+- **Branches**: `develop` is active integration; `main` is manual release only.
+  The XLSX repair was developed on `fix/xlsx-upload-parser`; confirm that branch
+  is deleted after its passing pull request merges into `develop`.
+- **Deployment/data**: the test VM is expected at `192.168.50.194:3000`.
+  PostgreSQL data must never be reset, truncated, replaced, or removed. Never
+  run `docker compose down -v`.
+- **Current focus**: validate the repaired `.xlsx` upload flow on the test VM.
+  Keep the public site unchanged. Import remains admin-only, in-memory,
+  transactional, add-only, duplicate-aware, and unable to update or delete
+  existing records.
+- **Recent work**: PostgreSQL migration, admin household management, Cloudflare
+  Server Action origins, and admin XLSX template/preview/import are merged into
+  `develop`.
+- **Current local validation**: generated-template upload, populated ExcelJS
+  workbook parsing, malformed binary handling, readable-workbook format errors,
+  formatting, lint, type checking, unit tests, and production build pass.
+  Database integration tests require PostgreSQL and will run in CI.
+- **Pending**: deploy the merged parser fix to the test VM; verify template
+  download/re-upload, populated workbook preview/import, duplicate re-upload,
+  unchanged existing data, public surname lookup, app restart/rebuild
+  persistence, and server log diagnostics.
+- **Commands**: `npm run format`, `npm run lint`, `npm run typecheck`,
+  `npm test`, `npm run build`, `bash -n install.sh update.sh`,
+  `docker compose up -d --build`, and
+  `curl http://localhost:3000/api/health`.
+
 ## Current Status
 
 - `develop` is the active integration branch.
@@ -8,6 +40,9 @@
   all database calls are properly async.
 - Admin-only `.xlsx` bulk import for households and invited guests is available
   from the dashboard.
+- The XLSX upload parser repair keeps ExcelJS external to the Next.js server
+  bundle, adds upload-stage diagnostics, and distinguishes unreadable files from
+  readable workbooks with bad structure.
 - All public pages remain unchanged in design.
 - Reception and ceremony details are confirmed and displayed correctly.
 - Registry section is permanently removed.
@@ -41,11 +76,18 @@ completing VM validation.
 
 ## Pending Validation
 
-- Deploy `develop` to Debian test VM after the bulk import feature merges.
+- Confirm the XLSX parser pull request is merged into `develop`, then deploy
+  `develop` to the Debian test VM.
 - Verify postgres container healthy (`docker compose ps`).
 - Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
 - Verify admin login works with configured `ADMIN_PASSWORD`.
 - Verify household creation, guest management, public RSVP flow.
+- Verify the downloaded XLSX template can be uploaded and previewed.
+- Verify a populated XLSX previews/imports and a second upload skips duplicates.
+- Verify existing household contacts, guest notes/statuses, households, and
+  guests remain unchanged by import.
+- Confirm failed XLSX parsing logs filename, size, MIME type, parse stage, and
+  the underlying ExcelJS error without logging spreadsheet contents.
 - Confirm Postgres data survives `docker compose restart app`.
 - Confirm Postgres data survives `docker compose up -d --build`.
 - Import the real invitation household and guest list.

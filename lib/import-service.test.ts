@@ -66,6 +66,24 @@ describeDb("guest import service", () => {
     }
   });
 
+  it("counts rejected rows once when a row has multiple errors", async () => {
+    const result = await previewGuestImport(
+      parsed(
+        [],
+        [
+          { rowNumber: 8, message: "Missing First Name" },
+          { rowNumber: 8, message: "Missing Last Name" },
+        ],
+      ),
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.summary.rowsRejected).toBe(1);
+      expect(result.errors).toHaveLength(2);
+    }
+  });
+
   it("preview detects duplicate existing person", async () => {
     const householdId = await createHousehold({
       householdName: "The Wolfe Family",
@@ -244,5 +262,22 @@ describeDb("guest import service", () => {
         (household) => household.householdName === "The Existing Family",
       )?.guests,
     ).toHaveLength(1);
+  });
+
+  it("rolls back the full import when an unexpected insert fails", async () => {
+    await expect(
+      importValidGuestRows(
+        parsed([
+          row({ rowNumber: 2, searchLastName: "Valid", firstName: "Person" }),
+          row({
+            rowNumber: 3,
+            searchLastName: "Broken",
+            firstName: "x".repeat(81),
+          }),
+        ]),
+      ),
+    ).rejects.toThrow();
+
+    expect(await getHouseholds()).toEqual([]);
   });
 });

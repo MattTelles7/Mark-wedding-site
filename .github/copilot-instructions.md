@@ -1,5 +1,15 @@
 # Copilot Instructions
 
+## Required Orientation
+
+Read `RULES.md` and `PROJECT_STATE.md` before making changes. Treat those files,
+the current checkout, and current GitHub state as authoritative; never trust
+stale chat memory or an old AI handoff over the repository.
+
+Preserve PostgreSQL data, work from `develop` through short-lived branches, open
+pull requests into `develop`, and delete merged feature/fix branches. `main` is
+manual-release only.
+
 ## Commands
 
 ```bash
@@ -86,7 +96,10 @@ Use Conventional Commits. Keep each commit to one logical change.
 and invited people, skip duplicate people, and report invalid rows. They must
 never update or delete existing households/guests. Matching is normalized
 Household Name + Last Name; duplicate people are same household + first name +
-last name.
+last name. Uploads are converted from `File.arrayBuffer()` to a Node `Buffer`,
+parsed in memory with ExcelJS, and discarded. Do not bundle ExcelJS into the
+Next.js server output. Parse failures must log filename, file size, MIME type,
+parse stage, and the underlying error without logging workbook contents.
 
 **Security rules:**
 

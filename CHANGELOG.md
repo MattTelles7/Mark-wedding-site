@@ -66,6 +66,15 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Valid `.xlsx` uploads no longer depend on a Turbopack-rewritten ExcelJS server
+  bundle. The server action now reads uploaded files through
+  `File.arrayBuffer()` into a Node `Buffer`, ships ExcelJS as an intact Node
+  dependency, allows multipart overhead above the 10 MiB file limit, and records
+  safe upload-stage diagnostics when parsing fails.
+- Readable workbooks with a missing `Guests` sheet or incorrect required headers
+  now report a workbook format error instead of an unreadable-file error.
+- Concurrent final imports are serialized to prevent duplicate-detection races,
+  and rejected-row summaries count unique spreadsheet rows.
 - Admin login crash: previously the synchronous SQLite `WeddingDatabase` class
   failed during async Next.js request processing; all database access is now
   properly async and the admin session flow is stable

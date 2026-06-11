@@ -116,6 +116,11 @@ name, and same last name and are skipped.
 Uploads are parsed in memory and not stored on disk. Only `.xlsx` files are
 accepted, with a 10 MB upload limit and 5,000 data-row limit.
 
+If an upload cannot be read, check the app server logs. They record the filename,
+file size, MIME type, parse stage, and underlying ExcelJS error, but never log
+spreadsheet contents. A readable workbook with a missing `Guests` sheet or
+incorrect required headers is reported as a workbook format error.
+
 ## Quality Checks
 
 ```bash

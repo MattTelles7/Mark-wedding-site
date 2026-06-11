@@ -239,7 +239,7 @@ function previewFromPlan(
     guestsToCreate: guestsToCreate.length,
     guestsCreated: created.guestsCreated,
     duplicateGuestsSkipped: plan.duplicatesSkipped.length,
-    rowsRejected: plan.errors.length,
+    rowsRejected: new Set(plan.errors.map((error) => error.rowNumber)).size,
     warnings: plan.warnings.length + plan.duplicatesSkipped.length,
   };
 
@@ -300,6 +300,10 @@ export async function importValidGuestRows(
   }
 
   return withTransaction(async (client) => {
+    // Serialize imports so a concurrent upload cannot race duplicate detection.
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtext('wedding_guest_import'))",
+    );
     const existingHouseholds = await loadExistingHouseholds(client);
     const plan = buildImportPlan(
       parsed.rows,
