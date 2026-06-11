@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
 import { createGuestImportTemplateBuffer } from "@/lib/import-template";
+import { GUEST_IMPORT_HEADERS, GUEST_IMPORT_SHEETS } from "@/lib/import-types";
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
@@ -96,6 +98,40 @@ describe("admin import actions", () => {
       errors: [],
       emptyRowsIgnored: 0,
     });
+  });
+
+  it("reads a populated workbook through the server action upload path", async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(GUEST_IMPORT_SHEETS.guests);
+    sheet.addRow([...GUEST_IMPORT_HEADERS]);
+    sheet.addRow(["Wolfe", "", "Mark", "", "", "", ""]);
+    const formData = new FormData();
+    formData.set(
+      "file",
+      new File(
+        [new Uint8Array(await workbook.xlsx.writeBuffer())],
+        "wedding-guests.xlsx",
+        {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      ),
+    );
+
+    const result = await previewGuestImportAction(formData);
+
+    expect(result.success).toBe(true);
+    expect(previewGuestImport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rows: [
+          expect.objectContaining({
+            searchLastName: "Wolfe",
+            householdName: "The Wolfe Family",
+            firstName: "Mark",
+            personLastName: "Wolfe",
+          }),
+        ],
+      }),
+    );
   });
 
   it("logs upload metadata and the underlying workbook read error", async () => {

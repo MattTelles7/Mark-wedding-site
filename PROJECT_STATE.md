@@ -21,8 +21,8 @@
   `develop`.
 - **Validation**: generated-template upload, populated ExcelJS workbook parsing,
   malformed binary handling, readable-workbook format errors, formatting, lint,
-  type checking, all 67 tests against PostgreSQL, the production build, and
-  deployment-script syntax pass. GitHub CI run `27360647036` passed.
+  type checking, PostgreSQL-backed import and duplicate re-upload tests, the
+  production build, and deployment-script syntax pass in local and GitHub CI.
 - **Pending**: deploy the merged parser fix to the test VM; verify template
   download/re-upload, populated workbook preview/import, duplicate re-upload,
   unchanged existing data, public surname lookup, app restart/rebuild

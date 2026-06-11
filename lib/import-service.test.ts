@@ -264,6 +264,28 @@ describeDb("guest import service", () => {
     ).toHaveLength(1);
   });
 
+  it("skips every guest when the same workbook is imported twice", async () => {
+    const workbookRows = parsed([
+      row({ rowNumber: 2, searchLastName: "Wolfe", firstName: "Amy" }),
+      row({ rowNumber: 3, searchLastName: "Wolfe", firstName: "Jeremy" }),
+    ]);
+
+    const firstResult = await importValidGuestRows(workbookRows);
+    const secondResult = await importValidGuestRows(workbookRows);
+
+    expect(firstResult.success).toBe(true);
+    expect(secondResult.success).toBe(true);
+    if (secondResult.success) {
+      expect(secondResult.summary.householdsCreated).toBe(0);
+      expect(secondResult.summary.guestsCreated).toBe(0);
+      expect(secondResult.summary.duplicateGuestsSkipped).toBe(2);
+    }
+
+    const households = await getHouseholds();
+    expect(households).toHaveLength(1);
+    expect(households[0].guests).toHaveLength(2);
+  });
+
   it("rolls back the full import when an unexpected insert fails", async () => {
     await expect(
       importValidGuestRows(
