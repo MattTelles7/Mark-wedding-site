@@ -33,6 +33,10 @@
 - [x] Add favicon and Apple touch icon from couple photo.
 - [x] Add admin `.xlsx` bulk import template, preview, duplicate detection, and
       add-only final import.
+- [x] Repair server-side `.xlsx` upload parsing, preserve ExcelJS as a Node
+      dependency, and add safe parse-stage diagnostics.
+- [ ] Verify the XLSX parser fix on the Debian test VM with template re-upload,
+      populated preview/import, duplicate re-upload, and data-preservation checks.
 - [ ] Import the real invitation household and guest list using the admin bulk
       import.
 - [ ] Test household and invited-person deletion through a real browser.

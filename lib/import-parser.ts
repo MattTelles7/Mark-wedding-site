@@ -17,7 +17,18 @@ export type ParsedGuestImportWorkbook = {
   fatalError?: string;
 };
 
+export type GuestImportParseOptions = {
+  onWorkbookReadError?: (error: unknown) => void;
+};
+
+export type ImportUploadFile = Pick<
+  File,
+  "arrayBuffer" | "name" | "size" | "type"
+>;
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const WORKBOOK_FORMAT_ERROR =
+  "The workbook was readable, but the Guests sheet or required headers were not found.";
 
 function textFromCellValue(value: ExcelJS.CellValue | undefined): string {
   if (value === null || value === undefined) {
@@ -141,7 +152,9 @@ export function isXlsxFilename(name: string): boolean {
   return name.toLocaleLowerCase("en-US").endsWith(".xlsx");
 }
 
-export async function fileToImportBuffer(file: File): Promise<Buffer> {
+export async function fileToImportBuffer(
+  file: ImportUploadFile,
+): Promise<Buffer> {
   if (!isXlsxFilename(file.name)) {
     throw new Error("Upload a .xlsx file using the completed template.");
   }
@@ -156,13 +169,15 @@ export async function fileToImportBuffer(file: File): Promise<Buffer> {
 
 export async function parseGuestImportWorkbook(
   buffer: Buffer,
+  options: GuestImportParseOptions = {},
 ): Promise<ParsedGuestImportWorkbook> {
   const workbook = new ExcelJS.Workbook();
   try {
     await workbook.xlsx.load(
       buffer as unknown as Parameters<typeof workbook.xlsx.load>[0],
     );
-  } catch {
+  } catch (error) {
+    options.onWorkbookReadError?.(error);
     return {
       rows: [],
       errors: [],
@@ -177,7 +192,7 @@ export async function parseGuestImportWorkbook(
       rows: [],
       errors: [],
       emptyRowsIgnored: 0,
-      fatalError: 'The workbook must include a "Guests" sheet.',
+      fatalError: WORKBOOK_FORMAT_ERROR,
     };
   }
 
@@ -187,7 +202,7 @@ export async function parseGuestImportWorkbook(
       rows: [],
       errors: headerErrors,
       emptyRowsIgnored: 0,
-      fatalError: "The Guests sheet headers do not match the import template.",
+      fatalError: WORKBOOK_FORMAT_ERROR,
     };
   }
 

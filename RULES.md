@@ -108,6 +108,11 @@ and the production build. Update the project memory files when state changes.
 - Admin spreadsheet uploads must be `.xlsx` only, parsed server-side, discarded
   after processing, and shown with clear preview/import summaries and row-level
   errors before data is inserted.
+- XLSX uploads must be read through `File.arrayBuffer()` into a Node `Buffer`.
+  Keep ExcelJS external to the Next.js server bundle. Log filename, size, MIME
+  type, parse stage, and the underlying parser error without logging workbook
+  contents. A readable workbook with missing sheets/headers is a format error,
+  not an unreadable-file error.
 
 ## Content
 
