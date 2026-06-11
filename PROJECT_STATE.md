@@ -7,8 +7,8 @@
 - **Stack**: Next.js App Router, TypeScript, Node.js 22, PostgreSQL 17 through
   `pg`, Docker Compose, and the persistent `postgres_data` named volume.
 - **Branches**: `develop` is active integration; `main` is manual release only.
-  The XLSX repair was developed on `fix/xlsx-upload-parser`; confirm that branch
-  is deleted after its passing pull request merges into `develop`.
+  XLSX repair PR #19 is merged at `18c7ee2`; its fix branch is deleted locally
+  and remotely. There are no open pull requests.
 - **Deployment/data**: the test VM is expected at `192.168.50.194:3000`.
   PostgreSQL data must never be reset, truncated, replaced, or removed. Never
   run `docker compose down -v`.
@@ -19,14 +19,15 @@
 - **Recent work**: PostgreSQL migration, admin household management, Cloudflare
   Server Action origins, and admin XLSX template/preview/import are merged into
   `develop`.
-- **Current local validation**: generated-template upload, populated ExcelJS
-  workbook parsing, malformed binary handling, readable-workbook format errors,
-  formatting, lint, type checking, unit tests, and production build pass.
-  Database integration tests require PostgreSQL and will run in CI.
+- **Validation**: generated-template upload, populated ExcelJS workbook parsing,
+  malformed binary handling, readable-workbook format errors, formatting, lint,
+  type checking, all 67 tests against PostgreSQL, the production build, and
+  deployment-script syntax pass. GitHub CI run `27360647036` passed.
 - **Pending**: deploy the merged parser fix to the test VM; verify template
   download/re-upload, populated workbook preview/import, duplicate re-upload,
   unchanged existing data, public surname lookup, app restart/rebuild
-  persistence, and server log diagnostics.
+  persistence, and server log diagnostics. On June 11, 2026, SSH to
+  `192.168.50.194` timed out through the current VPN route.
 - **Commands**: `npm run format`, `npm run lint`, `npm run typecheck`,
   `npm test`, `npm run build`, `bash -n install.sh update.sh`,
   `docker compose up -d --build`, and
@@ -76,8 +77,8 @@ completing VM validation.
 
 ## Pending Validation
 
-- Confirm the XLSX parser pull request is merged into `develop`, then deploy
-  `develop` to the Debian test VM.
+- Deploy merged `develop` commit `18c7ee2` or later to the Debian test VM once
+  `192.168.50.194` is reachable.
 - Verify postgres container healthy (`docker compose ps`).
 - Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
 - Verify admin login works with configured `ADMIN_PASSWORD`.
