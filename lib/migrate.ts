@@ -44,10 +44,6 @@ const migrations: Array<{ name: string; sql: string }> = [
       ON CONFLICT (key) DO NOTHING;
     `,
   },
-  {
-    name: "002_drop_legacy_rsvps",
-    sql: `DROP TABLE IF EXISTS legacy_rsvps;`,
-  },
 ];
 
 export async function runMigrations(): Promise<void> {
