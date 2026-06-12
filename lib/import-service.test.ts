@@ -111,6 +111,34 @@ describeDb("guest import service", () => {
     }
   });
 
+  it("checks guests across duplicate normalized household records", async () => {
+    await createHousehold({
+      householdName: "The Wolfe Family",
+      searchLastName: "Wolfe",
+    });
+    const duplicateHouseholdId = await createHousehold({
+      householdName: " the   WOLFE family ",
+      searchLastName: " wolfe ",
+    });
+    await createGuest(duplicateHouseholdId, {
+      firstName: "Mark",
+      lastName: "Wolfe",
+    });
+
+    const result = await previewGuestImport(
+      parsed([
+        row({ rowNumber: 2, searchLastName: "Wolfe", firstName: "Mark" }),
+      ]),
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.summary.existingHouseholdsMatched).toBe(1);
+      expect(result.summary.guestsToCreate).toBe(0);
+      expect(result.summary.duplicateGuestsSkipped).toBe(1);
+    }
+  });
+
   it("preview matches existing household by normalized Household Name and Last Name", async () => {
     await createHousehold({
       householdName: "The Wolfe Family",
@@ -134,6 +162,62 @@ describeDb("guest import service", () => {
       expect(result.summary.existingHouseholdsMatched).toBe(1);
       expect(result.summary.householdsToCreate).toBe(0);
       expect(result.summary.guestsToCreate).toBe(1);
+    }
+  });
+
+  it("preview groups people with the same last name into one generated household", async () => {
+    const result = await previewGuestImport(
+      parsed([
+        row({ rowNumber: 2, searchLastName: "Telles", firstName: "Matt" }),
+        row({ rowNumber: 3, searchLastName: "Telles", firstName: "Lilly" }),
+      ]),
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.summary.householdsToCreate).toBe(1);
+      expect(result.summary.guestsToCreate).toBe(2);
+      expect(result.householdsToCreate).toEqual([
+        {
+          householdKey: "the telles family::telles",
+          householdName: "The Telles Family",
+          searchLastName: "Telles",
+          guestCount: 2,
+        },
+      ]);
+      expect(result.guestsToCreate).toEqual([
+        expect.objectContaining({
+          householdKey: "the telles family::telles",
+          householdName: "The Telles Family",
+          firstName: "Matt",
+          lastName: "Telles",
+        }),
+        expect.objectContaining({
+          householdKey: "the telles family::telles",
+          householdName: "The Telles Family",
+          firstName: "Lilly",
+          lastName: "Telles",
+        }),
+      ]);
+    }
+  });
+
+  it("preview skips duplicate rows within one workbook", async () => {
+    const result = await previewGuestImport(
+      parsed([
+        row({ rowNumber: 2, searchLastName: "Smith", firstName: "John" }),
+        row({ rowNumber: 3, searchLastName: "Smith", firstName: "John" }),
+      ]),
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.summary.guestsToCreate).toBe(1);
+      expect(result.summary.duplicateGuestsSkipped).toBe(1);
+      expect(result.duplicatesSkipped[0]).toEqual({
+        rowNumber: 3,
+        message: "Duplicate guest repeated in file; skipped",
+      });
     }
   });
 

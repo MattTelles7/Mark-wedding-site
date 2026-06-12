@@ -31,7 +31,7 @@ function SummaryGrid({
     <div className="import-summary-grid" aria-label="Import summary">
       <article>
         <span>
-          {mode === "preview" ? "Households to create" : "Households created"}
+          {mode === "preview" ? "Families to create" : "Families created"}
         </span>
         <strong>
           {mode === "preview"
@@ -40,7 +40,7 @@ function SummaryGrid({
         </strong>
       </article>
       <article>
-        <span>Existing households matched</span>
+        <span>Existing families matched</span>
         <strong>{summary.existingHouseholdsMatched}</strong>
       </article>
       <article>
@@ -104,42 +104,62 @@ function IssueList({
 }
 
 function PreviewDetails({ result }: { result: GuestImportPreview }) {
+  function guestsForHousehold(household: { householdKey: string }) {
+    return result.guestsToCreate.filter(
+      (guest) => guest.householdKey === household.householdKey,
+    );
+  }
+
+  function householdList(
+    households: GuestImportPreview["householdsToCreate"],
+    emptyLabel: string,
+  ) {
+    return (
+      <ul className="import-household-list">
+        {households.slice(0, 20).map((household) => {
+          const guests = guestsForHousehold(household);
+          return (
+            <li key={`${household.householdName}-${household.searchLastName}`}>
+              <strong>{household.householdName}</strong>
+              {guests.length > 0 ? (
+                <ul className="import-guest-list">
+                  {guests.map((guest) => (
+                    <li key={`${guest.rowNumber}-${guest.firstName}`}>
+                      {guest.firstName} {guest.lastName}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span>{emptyLabel}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   return (
     <div className="import-preview-details">
       {result.householdsToCreate.length > 0 ? (
         <details>
           <summary>
-            Households to create ({result.householdsToCreate.length})
+            Families to create ({result.householdsToCreate.length})
           </summary>
-          <ul>
-            {result.householdsToCreate.slice(0, 20).map((household) => (
-              <li
-                key={`${household.householdName}-${household.searchLastName}`}
-              >
-                {household.householdName} — {household.guestCount} guest
-                {household.guestCount === 1 ? "" : "s"}
-              </li>
-            ))}
-          </ul>
+          {householdList(result.householdsToCreate, "No new guests")}
         </details>
       ) : null}
 
       {result.existingHouseholdsMatched.length > 0 ? (
         <details>
           <summary>
-            Existing households matched (
-            {result.existingHouseholdsMatched.length})
+            Existing families matched ({result.existingHouseholdsMatched.length}
+            )
           </summary>
-          <ul>
-            {result.existingHouseholdsMatched.slice(0, 20).map((household) => (
-              <li
-                key={`${household.householdName}-${household.searchLastName}`}
-              >
-                {household.householdName} — {household.guestCount} new guest
-                {household.guestCount === 1 ? "" : "s"}
-              </li>
-            ))}
-          </ul>
+          {householdList(
+            result.existingHouseholdsMatched,
+            "All listed guests are duplicates",
+          )}
         </details>
       ) : null}
     </div>
@@ -214,7 +234,7 @@ export function BulkImportFamilies() {
         setPendingLabel("");
         setMessage(
           result.success
-            ? "Import finished. Dashboard counts and household list have refreshed."
+            ? "Import finished. No existing households or guests were updated or deleted."
             : result.message,
         );
         if (result.success) {
@@ -235,9 +255,9 @@ export function BulkImportFamilies() {
           <h2>Bulk Import Families</h2>
         </div>
         <p>
-          Download the template, add one invited person per row, preview, then
-          import valid rows. Existing households and guests are never updated or
-          deleted.
+          Download the template, add one invited person per row, preview the
+          family grouping, then import valid rows. Guests with the same last
+          name are grouped into The [Last Name] Family.
         </p>
       </div>
 

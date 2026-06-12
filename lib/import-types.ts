@@ -5,6 +5,14 @@ export const GUEST_IMPORT_SHEETS = {
 } as const;
 
 export const GUEST_IMPORT_HEADERS = [
+  "First Name",
+  "Last Name",
+  "Email",
+  "Phone",
+  "Admin Notes",
+] as const;
+
+export const LEGACY_GUEST_IMPORT_HEADERS = [
   "Last Name",
   "Household Name",
   "First Name",
@@ -13,6 +21,28 @@ export const GUEST_IMPORT_HEADERS = [
   "Contact Phone",
   "Admin Notes",
 ] as const;
+
+export type GuestImportColumn =
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "phone"
+  | "notes"
+  | "householdName"
+  | "personLastName";
+
+export const GUEST_IMPORT_HEADER_ALIASES: Record<
+  GuestImportColumn,
+  readonly string[]
+> = {
+  firstName: ["First Name", "First", "Given Name"],
+  lastName: ["Last Name", "Last", "Surname"],
+  email: ["Email", "Contact Email"],
+  phone: ["Phone", "Contact Phone"],
+  notes: ["Admin Notes", "Notes"],
+  householdName: ["Household Name"],
+  personLastName: ["Person Last Name"],
+};
 
 export const MAX_IMPORT_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const MAX_IMPORT_ROWS = 5_000;
@@ -53,18 +83,22 @@ export type GuestImportPreview = {
   success: true;
   summary: GuestImportSummary;
   householdsToCreate: Array<{
+    householdKey: string;
     householdName: string;
     searchLastName: string;
     guestCount: number;
   }>;
   existingHouseholdsMatched: Array<{
+    householdKey: string;
     householdName: string;
     searchLastName: string;
     guestCount: number;
   }>;
   guestsToCreate: Array<{
     rowNumber: number;
+    householdKey: string;
     householdName: string;
+    searchLastName: string;
     firstName: string;
     lastName: string;
   }>;
@@ -83,6 +117,12 @@ export type GuestImportActionResult = GuestImportPreview | GuestImportFailure;
 
 export function normalizeImportText(value: string): string {
   return value.trim().replace(/\s+/gu, " ");
+}
+
+export function normalizeImportHeader(value: string): string {
+  return normalizeImportText(value)
+    .toLocaleLowerCase("en-US")
+    .replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
 export function defaultHouseholdName(lastName: string): string {

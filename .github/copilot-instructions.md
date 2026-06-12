@@ -94,12 +94,16 @@ Use Conventional Commits. Keep each commit to one logical change.
 
 **XLSX bulk imports are add-only.** Admin imports may create missing households
 and invited people, skip duplicate people, and report invalid rows. They must
-never update or delete existing households/guests. Matching is normalized
-Household Name + Last Name; duplicate people are same household + first name +
-last name. Uploads are converted from `File.arrayBuffer()` to a Node `Buffer`,
-parsed in memory with ExcelJS, and discarded. Do not bundle ExcelJS into the
-Next.js server output. Parse failures must log filename, file size, MIME type,
-parse stage, and the underlying error without logging workbook contents.
+never update or delete existing households/guests. The downloaded template uses
+`First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`, one person per
+row. Simple rows with the same last name are grouped into
+`The [Last Name] Family`; the old seven-column format remains parseable for
+compatibility. Duplicate people are same household + first name + last name.
+Uploads are converted from `File.arrayBuffer()` to a Node `Buffer`, parsed in
+memory with ExcelJS, and discarded. Do not bundle ExcelJS into the Next.js
+server output. Parse failures must log filename, file size, MIME type, parse
+stage, parsed sheet names, and the underlying error without logging workbook
+contents.
 
 **Security rules:**
 

@@ -27,7 +27,7 @@ function styleHeaderRow(row: ExcelJS.Row) {
       bottom: { style: "thin", color: { argb: "FFAD8B57" } },
     };
     cell.fill =
-      colNumber === 1 || colNumber === 3
+      colNumber === 1 || colNumber === 2
         ? requiredHeaderFill
         : optionalHeaderFill;
   });
@@ -35,9 +35,6 @@ function styleHeaderRow(row: ExcelJS.Row) {
 
 export async function createGuestImportTemplateBuffer(): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Wedding RSVP Admin";
-  workbook.created = new Date();
-  workbook.modified = new Date();
 
   const guests = workbook.addWorksheet(GUEST_IMPORT_SHEETS.guests, {
     views: [{ state: "frozen", ySplit: 1 }],
@@ -45,12 +42,10 @@ export async function createGuestImportTemplateBuffer(): Promise<Buffer> {
   guests.addRow([...GUEST_IMPORT_HEADERS]);
   styleHeaderRow(guests.getRow(1));
   guests.columns = [
-    { key: "lastName", width: 22 },
-    { key: "householdName", width: 28 },
     { key: "firstName", width: 22 },
-    { key: "personLastName", width: 22 },
-    { key: "contactEmail", width: 30 },
-    { key: "contactPhone", width: 20 },
+    { key: "lastName", width: 22 },
+    { key: "email", width: 30 },
+    { key: "phone", width: 20 },
     { key: "adminNotes", width: 36 },
   ];
 
@@ -64,38 +59,37 @@ export async function createGuestImportTemplateBuffer(): Promise<Buffer> {
   styleHeaderRow(instructions.getRow(1));
   instructions.addRows([
     [
+      "First Name",
+      "Yes",
+      "Invited person's first name. Add one invited person per row.",
+    ],
+    [
       "Last Name",
       "Yes",
-      "Household/family search last name. Guests will search by this last name.",
+      'Invited person\'s last name. People with the same last name are grouped into "The [Last Name] Family".',
     ],
     [
-      "Household Name",
+      "Email",
       "No",
-      'Display name for the invitation. Blank cells become "The [Last Name] Family".',
-    ],
-    ["First Name", "Yes", "Invited person first name. One row per person."],
-    [
-      "Person Last Name",
-      "No",
-      "Invited person last name. Blank cells use the household Last Name.",
+      "Household contact email. For a new family, the first non-empty email is used.",
     ],
     [
-      "Contact Email",
+      "Phone",
       "No",
-      "Household-level contact email. For multiple rows in one household, the first non-empty value wins.",
-    ],
-    [
-      "Contact Phone",
-      "No",
-      "Household-level phone. For multiple rows in one household, the first non-empty value wins.",
+      "Household contact phone. For a new family, the first non-empty phone is used.",
     ],
     ["Admin Notes", "No", "Private note for this invited person."],
   ]);
   instructions.addRow([]);
   instructions.addRow([
+    "Family grouping",
+    "",
+    'Matt Telles and Lilly Telles become "The Telles Family". If automatic grouping is wrong, import the rows and adjust the households manually in the admin dashboard afterward.',
+  ]);
+  instructions.addRow([
     "Important",
     "",
-    "The import is add-only. It creates missing households/people, skips duplicate people, and never updates or deletes existing records.",
+    "The import only adds missing families and people. It skips duplicates and never updates or deletes existing records.",
   ]);
   instructions.addRow([
     "Limits",
@@ -111,18 +105,15 @@ export async function createGuestImportTemplateBuffer(): Promise<Buffer> {
   styleHeaderRow(example.getRow(1));
   example.columns = guests.columns;
   example.addRows([
-    [
-      "Wolfe",
-      "The Wolfe Family",
-      "Amy",
-      "Wolfe",
-      "amy@example.com",
-      "(555) 010-1000",
-      "Host family",
-    ],
-    ["Wolfe", "The Wolfe Family", "Jeremy", "Wolfe", "", "", ""],
-    ["Nelson", "", "Guerdithe", "", "guerdithe@example.com", "", "Bride"],
-    ["Nelson", "", "Guest", "Nelson", "", "", ""],
+    ["Jeremy", "Wolfe", "", "", "Host"],
+    ["Amy", "Wolfe", "", "", "Host"],
+    ["Mark", "Wolfe", "", "", ""],
+    ["Guerdithe", "Nelson", "", "", ""],
+    ["John", "Smith", "", "", ""],
+    ["Mary", "Smith", "", "", ""],
+    ["David", "O'Connor", "", "", ""],
+    ["Ana María", "García", "", "", ""],
+    ["Jean-Luc", "Martin", "", "", ""],
   ]);
 
   const buffer = await workbook.xlsx.writeBuffer();

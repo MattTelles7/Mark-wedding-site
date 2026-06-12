@@ -1,11 +1,13 @@
 import ExcelJS from "exceljs";
 import {
   defaultHouseholdName,
-  GUEST_IMPORT_HEADERS,
+  GUEST_IMPORT_HEADER_ALIASES,
   GUEST_IMPORT_SHEETS,
   MAX_IMPORT_ROWS,
   MAX_IMPORT_UPLOAD_BYTES,
+  normalizeImportHeader,
   normalizeImportText,
+  type GuestImportColumn,
   type GuestImportIssue,
   type GuestImportRow,
 } from "./import-types";
@@ -19,6 +21,7 @@ export type ParsedGuestImportWorkbook = {
 
 export type GuestImportParseOptions = {
   onWorkbookReadError?: (error: unknown) => void;
+  onWorkbookLoaded?: (sheetNames: string[]) => void;
 };
 
 export type ImportUploadFile = Pick<
@@ -66,19 +69,74 @@ function rowIssue(rowNumber: number, message: string): GuestImportIssue {
   return { rowNumber, message };
 }
 
-function validateHeaders(sheet: ExcelJS.Worksheet): GuestImportIssue[] {
+type GuestImportColumns = Partial<Record<GuestImportColumn, number>>;
+
+type ResolvedHeaders = {
+  columns: GuestImportColumns;
+  errors: GuestImportIssue[];
+};
+
+const normalizedHeaderFields = new Map<string, GuestImportColumn>(
+  Object.entries(GUEST_IMPORT_HEADER_ALIASES).flatMap(([field, aliases]) =>
+    aliases.map((alias) => [
+      normalizeImportHeader(alias),
+      field as GuestImportColumn,
+    ]),
+  ),
+);
+
+function resolveHeaders(sheet: ExcelJS.Worksheet): ResolvedHeaders {
   const headerRow = sheet.getRow(1);
-  return GUEST_IMPORT_HEADERS.flatMap((expected, index) => {
-    const actual = cellText(headerRow, index + 1);
-    return actual === expected
-      ? []
-      : [
-          rowIssue(
-            1,
-            `Expected column ${index + 1} to be "${expected}" but found "${actual || "blank"}".`,
-          ),
-        ];
-  });
+  const columns: GuestImportColumns = {};
+  const errors: GuestImportIssue[] = [];
+
+  for (
+    let columnNumber = 1;
+    columnNumber <= headerRow.cellCount;
+    columnNumber += 1
+  ) {
+    const header = cellText(headerRow, columnNumber);
+    const field = normalizedHeaderFields.get(normalizeImportHeader(header));
+    if (!field) {
+      continue;
+    }
+    if (columns[field]) {
+      errors.push(
+        rowIssue(
+          1,
+          `Header "${header}" appears more than once in the Guests sheet.`,
+        ),
+      );
+      continue;
+    }
+    columns[field] = columnNumber;
+  }
+
+  for (const requiredField of ["firstName", "lastName"] as const) {
+    if (!columns[requiredField]) {
+      const expected = GUEST_IMPORT_HEADER_ALIASES[requiredField].join(", ");
+      errors.push(
+        rowIssue(
+          1,
+          `Missing required ${requiredField === "firstName" ? "First Name" : "Last Name"} header. Accepted headers: ${expected}.`,
+        ),
+      );
+    }
+  }
+
+  return {
+    columns,
+    errors,
+  };
+}
+
+function mappedCellText(
+  row: ExcelJS.Row,
+  columns: GuestImportColumns,
+  field: GuestImportColumn,
+): string {
+  const columnNumber = columns[field];
+  return columnNumber ? cellText(row, columnNumber) : "";
 }
 
 function validateRow(row: GuestImportRow): GuestImportIssue[] {
@@ -185,6 +243,7 @@ export async function parseGuestImportWorkbook(
       fatalError: "The uploaded file could not be read as an .xlsx workbook.",
     };
   }
+  options.onWorkbookLoaded?.(workbook.worksheets.map((sheet) => sheet.name));
 
   const sheet = workbook.getWorksheet(GUEST_IMPORT_SHEETS.guests);
   if (!sheet) {
@@ -196,11 +255,11 @@ export async function parseGuestImportWorkbook(
     };
   }
 
-  const headerErrors = validateHeaders(sheet);
-  if (headerErrors.length > 0) {
+  const resolvedHeaders = resolveHeaders(sheet);
+  if (resolvedHeaders.errors.length > 0) {
     return {
       rows: [],
-      errors: headerErrors,
+      errors: resolvedHeaders.errors,
       emptyRowsIgnored: 0,
       fatalError: WORKBOOK_FORMAT_ERROR,
     };
@@ -213,9 +272,9 @@ export async function parseGuestImportWorkbook(
 
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
     const row = sheet.getRow(rowNumber);
-    const values = GUEST_IMPORT_HEADERS.map((_, index) =>
-      cellText(row, index + 1),
-    );
+    const values = (
+      Object.keys(resolvedHeaders.columns) as GuestImportColumn[]
+    ).map((field) => mappedCellText(row, resolvedHeaders.columns, field));
     if (values.every((value) => !value)) {
       emptyRowsIgnored += 1;
       continue;
@@ -231,20 +290,29 @@ export async function parseGuestImportWorkbook(
       };
     }
 
-    const [searchLastName, rawHouseholdName, firstName, rawPersonLastName] =
-      values;
-    const householdName =
-      rawHouseholdName || defaultHouseholdName(searchLastName);
-    const personLastName = rawPersonLastName || searchLastName;
+    const firstName = mappedCellText(row, resolvedHeaders.columns, "firstName");
+    const lastName = mappedCellText(row, resolvedHeaders.columns, "lastName");
+    const rawHouseholdName = mappedCellText(
+      row,
+      resolvedHeaders.columns,
+      "householdName",
+    );
+    const rawPersonLastName = mappedCellText(
+      row,
+      resolvedHeaders.columns,
+      "personLastName",
+    );
+    const householdName = rawHouseholdName || defaultHouseholdName(lastName);
+    const personLastName = rawPersonLastName || lastName;
     const importRow: GuestImportRow = {
       rowNumber,
-      searchLastName,
+      searchLastName: lastName,
       householdName,
       firstName,
       personLastName,
-      contactEmail: values[4],
-      contactPhone: values[5],
-      notes: values[6],
+      contactEmail: mappedCellText(row, resolvedHeaders.columns, "email"),
+      contactPhone: mappedCellText(row, resolvedHeaders.columns, "phone"),
+      notes: mappedCellText(row, resolvedHeaders.columns, "notes"),
     };
 
     const rowErrors = validateRow(importRow);

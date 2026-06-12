@@ -12,10 +12,11 @@
 - **Deployment/data**: the test VM is expected at `192.168.50.194:3000`.
   PostgreSQL data must never be reset, truncated, replaced, or removed. Never
   run `docker compose down -v`.
-- **Current focus**: validate the repaired `.xlsx` upload flow on the test VM.
-  Keep the public site unchanged. Import remains admin-only, in-memory,
-  transactional, add-only, duplicate-aware, and unable to update or delete
-  existing records.
+- **Current focus**: simplify the admin `.xlsx` import and validate it on the
+  test VM. New templates use one person per row with `First Name`, `Last Name`,
+  `Email`, `Phone`, and `Admin Notes`; matching last names become
+  `The [Last Name] Family`. Import remains admin-only, in-memory, transactional,
+  add-only, duplicate-aware, and unable to update or delete existing records.
 - **Recent work**: PostgreSQL migration, admin household management, Cloudflare
   Server Action origins, and admin XLSX template/preview/import are merged into
   `develop`.
@@ -44,6 +45,8 @@
 - The XLSX upload parser repair keeps ExcelJS external to the Next.js server
   bundle, adds upload-stage diagnostics, and distinguishes unreadable files from
   readable workbooks with bad structure.
+- New XLSX templates use five human-readable columns and group people by last
+  name. The previous seven-column workbook remains accepted for compatibility.
 - All public pages remain unchanged in design.
 - Reception and ceremony details are confirmed and displayed correctly.
 - Registry section is permanently removed.
@@ -207,7 +210,9 @@ Table `invited_guests`:
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
 - Admin `.xlsx` imports are add-only: existing households/guests are matched for
   duplicate detection but never updated or deleted by import.
-- Import matching uses normalized Household Name + Last Name; duplicate guest
+- Simple import matching uses normalized generated household name + last name.
+  The generated name is `The [Last Name] Family`. Legacy templates may still
+  supply their former household/person override columns. Duplicate guest
   detection uses same household + same first name + same last name.
 - Template limits are `.xlsx` only, 10 MB maximum upload, 5,000 data rows.
 - Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`.
