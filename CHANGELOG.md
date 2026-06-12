@@ -12,6 +12,8 @@ All notable changes to this project are documented here.
   create, duplicates skipped, warnings, and rejected rows.
 - PostgreSQL-backed regression coverage for add-only imports, duplicate
   re-uploads, transaction rollback, and existing-record preservation.
+- Regression coverage for namespace-prefixed workbook XML that ExcelJS cannot
+  read.
 
 ### Changed
 
@@ -26,13 +28,17 @@ All notable changes to this project are documented here.
 - Import previews list each family with the people who will be added.
 - Project handoff and operating documentation now consistently describe the
   Postgres stack and simple add-only import.
+- Uploaded workbooks are decoded with SheetJS 0.20.3. ExcelJS remains only for
+  styled template generation.
 
 ### Fixed
 
 - Uploaded workbooks are read from `File.arrayBuffer()` into a Node `Buffer`
-  before ExcelJS parsing.
-- ExcelJS remains an external Node dependency instead of being rewritten in the
-  Next.js server bundle.
+  before SheetJS parsing.
+- Structurally valid workbooks with namespace-prefixed `workbook.xml` roots now
+  parse successfully.
+- SheetJS and ExcelJS remain external Node dependencies instead of being
+  rewritten in the Next.js server bundle.
 - Readable workbooks with missing sheets or required headers report a format
   error instead of an unreadable-file error.
 - Upload diagnostics record filename, size, MIME type, parse stage, sheet

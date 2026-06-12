@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
+import { GUEST_IMPORT_READER } from "@/lib/import-parser";
 import { createGuestImportTemplateBuffer } from "@/lib/import-template";
 import { GUEST_IMPORT_HEADERS, GUEST_IMPORT_SHEETS } from "@/lib/import-types";
 
@@ -168,6 +169,7 @@ describe("admin import actions", () => {
       "Admin guest import upload",
       expect.objectContaining({
         parseStage: "workbook-loaded",
+        reader: GUEST_IMPORT_READER,
         sheetNames: [GUEST_IMPORT_SHEETS.guests],
       }),
     );
@@ -230,6 +232,7 @@ describe("admin import actions", () => {
         fileSize: 14,
         mimeType: "application/octet-stream",
         parseStage: "workbook-read",
+        reader: GUEST_IMPORT_READER,
         error: expect.any(String),
       }),
     );

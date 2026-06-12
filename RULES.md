@@ -109,10 +109,13 @@ and the production build. Update the project memory files when state changes.
   after processing, and shown with clear preview/import summaries and row-level
   errors before data is inserted.
 - XLSX uploads must be read through `File.arrayBuffer()` into a Node `Buffer`.
-  Keep ExcelJS external to the Next.js server bundle. Log filename, size, MIME
-  type, parse stage, parsed sheet names, and the underlying parser error without
-  logging workbook contents. A readable workbook with missing sheets/headers is
-  a format error, not an unreadable-file error.
+  Use SheetJS for upload parsing because ExcelJS cannot read every structurally
+  valid workbook. Keep ExcelJS only for styled template generation, and keep
+  both spreadsheet libraries external to the Next.js server bundle. Log
+  filename, size, MIME type, parse stage, reader, parsed sheet names, and the
+  underlying parser error without logging workbook contents. A readable
+  workbook with missing sheets/headers is a format error, not an
+  unreadable-file error.
 - The downloaded import template is one person per row with `First Name`,
   `Last Name`, `Email`, `Phone`, and `Admin Notes`. Simple imports group the
   same last name into `The [Last Name] Family`. Import remains add-only and

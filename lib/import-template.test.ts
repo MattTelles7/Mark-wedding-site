@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
+import { parseGuestImportWorkbook } from "./import-parser";
 import { createGuestImportTemplateBuffer } from "./import-template";
 import { GUEST_IMPORT_HEADERS, GUEST_IMPORT_SHEETS } from "./import-types";
 
@@ -52,6 +53,18 @@ describe("guest import template", () => {
       type: "pattern",
       pattern: "solid",
       fgColor: { argb: "FFF4F0E6" },
+    });
+  });
+
+  it("can be read by the same tolerant parser used for uploads", async () => {
+    const parsed = await parseGuestImportWorkbook(
+      await createGuestImportTemplateBuffer(),
+    );
+
+    expect(parsed).toEqual({
+      rows: [],
+      errors: [],
+      emptyRowsIgnored: 0,
     });
   });
 
