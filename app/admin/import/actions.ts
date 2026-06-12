@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import {
   fileToImportBuffer,
+  GUEST_IMPORT_READER,
   parseGuestImportWorkbook,
   type ImportUploadFile,
 } from "@/lib/import-parser";
@@ -14,6 +15,7 @@ type UploadDiagnostics = {
   fileName: string;
   fileSize: number;
   mimeType: string;
+  reader: typeof GUEST_IMPORT_READER;
 };
 
 function revalidateRsvpViews() {
@@ -65,10 +67,11 @@ async function parseUpload(formData: FormData) {
   if (!file) {
     throw new Error("Upload a completed .xlsx template before previewing.");
   }
-  const diagnostics = {
+  const diagnostics: UploadDiagnostics = {
     fileName: file.name,
     fileSize: file.size,
     mimeType: file.type || "unknown",
+    reader: GUEST_IMPORT_READER,
   };
 
   logUploadStage(diagnostics, "received");

@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 import {
   defaultHouseholdName,
   GUEST_IMPORT_HEADER_ALIASES,
@@ -30,10 +30,14 @@ export type ImportUploadFile = Pick<
 >;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const XLSX_ZIP_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+export const GUEST_IMPORT_READER = "sheetjs";
 export const WORKBOOK_FORMAT_ERROR =
   "The workbook was readable, but the Guests sheet or required headers were not found.";
 
-function textFromCellValue(value: ExcelJS.CellValue | undefined): string {
+type WorksheetRow = unknown[];
+
+function textFromCellValue(value: unknown): string {
   if (value === null || value === undefined) {
     return "";
   }
@@ -47,26 +51,28 @@ function textFromCellValue(value: ExcelJS.CellValue | undefined): string {
   if (value instanceof Date) {
     return value.toISOString();
   }
-  if ("text" in value && typeof value.text === "string") {
-    return value.text;
-  }
-  if ("richText" in value && Array.isArray(value.richText)) {
-    return value.richText.map((part) => part.text).join("");
-  }
-  if ("result" in value && value.result !== undefined) {
-    return textFromCellValue(value.result as ExcelJS.CellValue);
-  }
   return "";
 }
 
-function cellText(row: ExcelJS.Row, columnNumber: number): string {
-  return normalizeImportText(
-    textFromCellValue(row.getCell(columnNumber).value),
-  );
+function cellText(row: WorksheetRow, columnNumber: number): string {
+  return normalizeImportText(textFromCellValue(row[columnNumber - 1]));
 }
 
 function rowIssue(rowNumber: number, message: string): GuestImportIssue {
   return { rowNumber, message };
+}
+
+function unreadableWorkbook(
+  error: unknown,
+  options: GuestImportParseOptions,
+): ParsedGuestImportWorkbook {
+  options.onWorkbookReadError?.(error);
+  return {
+    rows: [],
+    errors: [],
+    emptyRowsIgnored: 0,
+    fatalError: "The uploaded file could not be read as an .xlsx workbook.",
+  };
 }
 
 type GuestImportColumns = Partial<Record<GuestImportColumn, number>>;
@@ -85,14 +91,14 @@ const normalizedHeaderFields = new Map<string, GuestImportColumn>(
   ),
 );
 
-function resolveHeaders(sheet: ExcelJS.Worksheet): ResolvedHeaders {
-  const headerRow = sheet.getRow(1);
+function resolveHeaders(rows: WorksheetRow[]): ResolvedHeaders {
+  const headerRow = rows[0] ?? [];
   const columns: GuestImportColumns = {};
   const errors: GuestImportIssue[] = [];
 
   for (
     let columnNumber = 1;
-    columnNumber <= headerRow.cellCount;
+    columnNumber <= headerRow.length;
     columnNumber += 1
   ) {
     const header = cellText(headerRow, columnNumber);
@@ -131,7 +137,7 @@ function resolveHeaders(sheet: ExcelJS.Worksheet): ResolvedHeaders {
 }
 
 function mappedCellText(
-  row: ExcelJS.Row,
+  row: WorksheetRow,
   columns: GuestImportColumns,
   field: GuestImportColumn,
 ): string {
@@ -229,23 +235,30 @@ export async function parseGuestImportWorkbook(
   buffer: Buffer,
   options: GuestImportParseOptions = {},
 ): Promise<ParsedGuestImportWorkbook> {
-  const workbook = new ExcelJS.Workbook();
+  let workbook: XLSX.WorkBook;
   try {
-    await workbook.xlsx.load(
-      buffer as unknown as Parameters<typeof workbook.xlsx.load>[0],
-    );
+    if (
+      !buffer.subarray(0, XLSX_ZIP_SIGNATURE.length).equals(XLSX_ZIP_SIGNATURE)
+    ) {
+      throw new Error("The upload is not a ZIP-based .xlsx workbook.");
+    }
+    workbook = XLSX.read(buffer, {
+      type: "buffer",
+      cellDates: false,
+      cellFormula: false,
+      cellHTML: false,
+      cellNF: false,
+      cellStyles: false,
+      cellText: true,
+      dense: true,
+      raw: false,
+    });
   } catch (error) {
-    options.onWorkbookReadError?.(error);
-    return {
-      rows: [],
-      errors: [],
-      emptyRowsIgnored: 0,
-      fatalError: "The uploaded file could not be read as an .xlsx workbook.",
-    };
+    return unreadableWorkbook(error, options);
   }
-  options.onWorkbookLoaded?.(workbook.worksheets.map((sheet) => sheet.name));
+  options.onWorkbookLoaded?.(workbook.SheetNames);
 
-  const sheet = workbook.getWorksheet(GUEST_IMPORT_SHEETS.guests);
+  const sheet = workbook.Sheets[GUEST_IMPORT_SHEETS.guests];
   if (!sheet) {
     return {
       rows: [],
@@ -255,7 +268,18 @@ export async function parseGuestImportWorkbook(
     };
   }
 
-  const resolvedHeaders = resolveHeaders(sheet);
+  let worksheetRows: WorksheetRow[];
+  try {
+    worksheetRows = XLSX.utils.sheet_to_json<WorksheetRow>(sheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+      blankrows: true,
+    });
+  } catch (error) {
+    return unreadableWorkbook(error, options);
+  }
+  const resolvedHeaders = resolveHeaders(worksheetRows);
   if (resolvedHeaders.errors.length > 0) {
     return {
       rows: [],
@@ -270,8 +294,9 @@ export async function parseGuestImportWorkbook(
   let emptyRowsIgnored = 0;
   let nonEmptyRows = 0;
 
-  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
-    const row = sheet.getRow(rowNumber);
+  for (let rowIndex = 1; rowIndex < worksheetRows.length; rowIndex += 1) {
+    const rowNumber = rowIndex + 1;
+    const row = worksheetRows[rowIndex] ?? [];
     const values = (
       Object.keys(resolvedHeaders.columns) as GuestImportColumn[]
     ).map((field) => mappedCellText(row, resolvedHeaders.columns, field));

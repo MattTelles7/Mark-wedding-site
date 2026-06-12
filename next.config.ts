@@ -16,7 +16,7 @@ const serverActionOrigins = (
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
-  serverExternalPackages: ["exceljs"],
+  serverExternalPackages: ["exceljs", "xlsx"],
   experimental: {
     serverActions: {
       allowedOrigins: serverActionOrigins,
