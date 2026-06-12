@@ -97,29 +97,35 @@ entry.
 The template has three sheets: `Guests`, `Instructions`, and `Example`. `Guests`
 is first and has these columns:
 
-| Column           | Required? | Meaning                                              |
-| ---------------- | --------- | ---------------------------------------------------- |
-| Last Name        | Yes       | Household/family search last name                    |
-| Household Name   | No        | Display name; blank becomes `The [Last Name] Family` |
-| First Name       | Yes       | Invited person's first name                          |
-| Person Last Name | No        | Invited person's last name; blank uses `Last Name`   |
-| Contact Email    | No        | Household-level contact email                        |
-| Contact Phone    | No        | Household-level contact phone                        |
-| Admin Notes      | No        | Private note for this invited person                 |
+| Column      | Required? | Meaning                              |
+| ----------- | --------- | ------------------------------------ |
+| First Name  | Yes       | Invited person's first name          |
+| Last Name   | Yes       | Invited person's last name           |
+| Email       | No        | Household-level contact email        |
+| Phone       | No        | Household-level contact phone        |
+| Admin Notes | No        | Private note for this invited person |
+
+People with the same last name are grouped into `The [Last Name] Family`. For
+example, Matt Telles and Lilly Telles become `The Telles Family`. This is
+intentionally simple; if automatic grouping is wrong, complete the import and
+adjust the households manually in the admin dashboard.
 
 The import is **add-only**. It never deletes existing households/guests, never
 updates existing household contact data, and never updates existing guest notes
-or RSVP statuses. Existing households are matched by normalized `Household Name`
-and `Last Name`. Duplicate people are detected by same household, same first
-name, and same last name and are skipped.
+or RSVP statuses. Existing generated households are matched by normalized
+`The [Last Name] Family` and last name. Duplicate people are detected by same
+household, same first name, and same last name and are skipped. The previous
+seven-column template remains accepted for backward compatibility, but new
+downloads use only the simple five-column format.
 
 Uploads are parsed in memory and not stored on disk. Only `.xlsx` files are
 accepted, with a 10 MB upload limit and 5,000 data-row limit.
 
 If an upload cannot be read, check the app server logs. They record the filename,
-file size, MIME type, parse stage, and underlying ExcelJS error, but never log
-spreadsheet contents. A readable workbook with a missing `Guests` sheet or
-incorrect required headers is reported as a workbook format error.
+file size, MIME type, parse stage, parsed sheet names, and underlying ExcelJS
+error, but never log spreadsheet contents. A readable workbook with a missing
+`Guests` sheet or unrecognized required headers is reported as a workbook format
+error.
 
 ## Quality Checks
 

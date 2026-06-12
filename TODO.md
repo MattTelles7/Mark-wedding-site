@@ -35,6 +35,8 @@
       add-only final import.
 - [x] Repair server-side `.xlsx` upload parsing, preserve ExcelJS as a Node
       dependency, and add safe parse-stage diagnostics.
+- [x] Simplify new XLSX templates to one person per row and group matching last
+      names into `The [Last Name] Family`.
 - [ ] Verify the XLSX parser fix on the Debian test VM with template re-upload,
       populated preview/import, duplicate re-upload, and data-preservation checks.
 - [ ] Import the real invitation household and guest list using the admin bulk

@@ -33,6 +33,15 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- New guest-import template downloads use five human-readable columns:
+  `First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`.
+- Simple imports group matching last names into `The [Last Name] Family`, while
+  the previous seven-column format remains supported for compatibility.
+- Import headers are matched by normalized aliases rather than fixed positions,
+  making ordinary Excel, Numbers, Google Sheets, LibreOffice, and generated
+  workbooks less brittle when their structure is otherwise valid.
+- Import previews now show each generated or matched family with its new people
+  listed beneath it.
 - All database code rewritten from synchronous SQLite to async Postgres (`pg`)
 - `lib/database.ts` — complete rewrite as async functions; all queries use
   `$1, $2, ...` parameterization; `confirmHousehold` uses
