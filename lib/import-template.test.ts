@@ -34,5 +34,70 @@ describe("guest import template", () => {
         String(guests.getRow(1).getCell(index + 1).value),
       ),
     ).toEqual([...GUEST_IMPORT_HEADERS]);
+    expect(guests.views).toEqual([
+      expect.objectContaining({ state: "frozen", ySplit: 1 }),
+    ]);
+    expect(guests.getRow(1).font.bold).toBe(true);
+    expect(guests.getCell("A1").fill).toMatchObject({
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE8DAB8" },
+    });
+    expect(guests.getCell("B1").fill).toMatchObject({
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE8DAB8" },
+    });
+    expect(guests.getCell("C1").fill).toMatchObject({
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF4F0E6" },
+    });
+  });
+
+  it("explains same-last-name grouping and add-only behavior", async () => {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(
+      (await createGuestImportTemplateBuffer()) as unknown as Parameters<
+        typeof workbook.xlsx.load
+      >[0],
+    );
+    const instructions = workbook.getWorksheet(
+      GUEST_IMPORT_SHEETS.instructions,
+    );
+    const text = instructions
+      ?.getSheetValues()
+      .flat(2)
+      .filter((value) => typeof value === "string")
+      .join(" ");
+
+    expect(text).toContain("People with the same last name");
+    expect(text).toContain("The Telles Family");
+    expect(text).toContain("never updates or deletes existing records");
+  });
+
+  it("includes the requested realistic example rows", async () => {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(
+      (await createGuestImportTemplateBuffer()) as unknown as Parameters<
+        typeof workbook.xlsx.load
+      >[0],
+    );
+    const example = workbook.getWorksheet(GUEST_IMPORT_SHEETS.example);
+    const names = example
+      ?.getRows(2, 9)
+      ?.map((row) => `${row.getCell(1).text} ${row.getCell(2).text}`);
+
+    expect(names).toEqual([
+      "Jeremy Wolfe",
+      "Amy Wolfe",
+      "Mark Wolfe",
+      "Guerdithe Nelson",
+      "John Smith",
+      "Mary Smith",
+      "David O'Connor",
+      "Ana María García",
+      "Jean-Luc Martin",
+    ]);
   });
 });

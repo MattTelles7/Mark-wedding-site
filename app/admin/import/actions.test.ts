@@ -17,8 +17,12 @@ vi.mock("@/lib/import-service", () => ({
 }));
 
 import { requireAdmin } from "@/lib/auth";
-import { previewGuestImport } from "@/lib/import-service";
-import { previewGuestImportAction } from "./actions";
+import { revalidatePath } from "next/cache";
+import { importValidGuestRows, previewGuestImport } from "@/lib/import-service";
+import {
+  importValidGuestRowsAction,
+  previewGuestImportAction,
+} from "./actions";
 
 describe("admin import actions", () => {
   beforeEach(() => {
@@ -52,6 +56,25 @@ describe("admin import actions", () => {
             errors: parsed.errors,
           },
     );
+    vi.mocked(importValidGuestRows).mockResolvedValue({
+      success: true,
+      summary: {
+        householdsToCreate: 1,
+        householdsCreated: 1,
+        existingHouseholdsMatched: 0,
+        guestsToCreate: 1,
+        guestsCreated: 1,
+        duplicateGuestsSkipped: 0,
+        rowsRejected: 0,
+        warnings: 0,
+      },
+      householdsToCreate: [],
+      existingHouseholdsMatched: [],
+      guestsToCreate: [],
+      duplicatesSkipped: [],
+      warnings: [],
+      errors: [],
+    });
     vi.spyOn(console, "info").mockImplementation(() => undefined);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
@@ -62,6 +85,15 @@ describe("admin import actions", () => {
     await expect(previewGuestImportAction(new FormData())).rejects.toThrow(
       "redirect",
     );
+  });
+
+  it("rejects non-admin final imports before reading upload data", async () => {
+    vi.mocked(requireAdmin).mockRejectedValueOnce(new Error("redirect"));
+
+    await expect(importValidGuestRowsAction(new FormData())).rejects.toThrow(
+      "redirect",
+    );
+    expect(importValidGuestRows).not.toHaveBeenCalled();
   });
 
   it("rejects non-xlsx uploads cleanly", async () => {
@@ -104,7 +136,7 @@ describe("admin import actions", () => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet(GUEST_IMPORT_SHEETS.guests);
     sheet.addRow([...GUEST_IMPORT_HEADERS]);
-    sheet.addRow(["Wolfe", "", "Mark", "", "", "", ""]);
+    sheet.addRow(["Mark", "Wolfe", "", "", ""]);
     const formData = new FormData();
     formData.set(
       "file",
@@ -132,6 +164,47 @@ describe("admin import actions", () => {
         ],
       }),
     );
+    expect(console.info).toHaveBeenCalledWith(
+      "Admin guest import upload",
+      expect.objectContaining({
+        parseStage: "workbook-loaded",
+        sheetNames: [GUEST_IMPORT_SHEETS.guests],
+      }),
+    );
+  });
+
+  it("runs a successful final import and refreshes the admin and RSVP views", async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(GUEST_IMPORT_SHEETS.guests);
+    sheet.addRow([...GUEST_IMPORT_HEADERS]);
+    sheet.addRow(["Mark", "Wolfe", "", "", ""]);
+    const formData = new FormData();
+    formData.set(
+      "file",
+      new File(
+        [new Uint8Array(await workbook.xlsx.writeBuffer())],
+        "wedding-guests.xlsx",
+        {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      ),
+    );
+
+    const result = await importValidGuestRowsAction(formData);
+
+    expect(result.success).toBe(true);
+    expect(importValidGuestRows).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rows: [
+          expect.objectContaining({
+            householdName: "The Wolfe Family",
+            firstName: "Mark",
+          }),
+        ],
+      }),
+    );
+    expect(revalidatePath).toHaveBeenCalledWith("/admin");
+    expect(revalidatePath).toHaveBeenCalledWith("/rsvp");
   });
 
   it("logs upload metadata and the underlying workbook read error", async () => {
