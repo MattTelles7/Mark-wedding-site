@@ -121,14 +121,11 @@ function buildImportPlan(
     if (!existingByHouseholdKey.has(key)) {
       existingByHouseholdKey.set(key, household);
     }
-    existingGuestKeys.set(
-      key,
-      new Set(
-        household.guests.map((guest) =>
-          guestImportKey(guest.firstName, guest.lastName),
-        ),
-      ),
-    );
+    const guestKeys = existingGuestKeys.get(key) ?? new Set<string>();
+    household.guests.forEach((guest) => {
+      guestKeys.add(guestImportKey(guest.firstName, guest.lastName));
+    });
+    existingGuestKeys.set(key, guestKeys);
   }
 
   const groups = new Map<string, HouseholdGroup>();
@@ -225,7 +222,9 @@ function previewFromPlan(
   const guestsToCreate = groupsWithGuests.flatMap((group) =>
     group.guestsToCreate.map((guest) => ({
       rowNumber: guest.rowNumber,
+      householdKey: group.householdKey,
       householdName: group.householdName,
+      searchLastName: group.searchLastName,
       firstName: guest.firstName,
       lastName: guest.personLastName,
     })),
@@ -247,11 +246,13 @@ function previewFromPlan(
     success: true,
     summary,
     householdsToCreate: householdsToCreate.map((group) => ({
+      householdKey: group.householdKey,
       householdName: group.householdName,
       searchLastName: group.searchLastName,
       guestCount: group.guestsToCreate.length,
     })),
     existingHouseholdsMatched: existingHouseholdsMatched.map((group) => ({
+      householdKey: group.householdKey,
       householdName:
         group.existingHousehold?.householdName ?? group.householdName,
       searchLastName:

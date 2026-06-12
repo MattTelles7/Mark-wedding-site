@@ -1181,6 +1181,10 @@ h3,
   align-items: stretch;
 }
 
+.import-actions > * {
+  min-width: 0;
+}
+
 .import-file-control {
   min-height: 48px;
   border: 1px solid var(--border);
@@ -1261,6 +1265,31 @@ h3,
 .import-issue-list ul {
   margin: 0.7rem 0 0;
   padding-left: 1.25rem;
+}
+
+.import-household-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.import-household-list > li {
+  overflow-wrap: anywhere;
+}
+
+.import-household-list > li > strong,
+.import-household-list > li > span {
+  display: block;
+}
+
+.import-household-list > li > span {
+  margin-top: 0.2rem;
+  color: var(--soft-ink);
+  font-size: 0.8rem;
+}
+
+.import-guest-list {
+  display: grid;
+  gap: 0.2rem;
 }
 
 .import-issue-error {
@@ -1691,10 +1720,20 @@ h3,
   .admin-actions,
   .admin-actions form,
   .admin-actions .button,
+  .import-actions,
+  .import-actions > *,
   .admin-settings form,
   .admin-settings .button,
   .admin-panel .button-primary,
   .household-admin-actions .button {
+    width: 100%;
+  }
+
+  .import-actions {
+    display: grid;
+  }
+
+  .import-file-control input {
     width: 100%;
   }
 

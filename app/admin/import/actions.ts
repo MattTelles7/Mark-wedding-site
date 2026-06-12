@@ -47,8 +47,9 @@ function logUploadStage(
   diagnostics: UploadDiagnostics,
   parseStage: string,
   error?: unknown,
+  context: Record<string, unknown> = {},
 ) {
-  const details = { ...diagnostics, parseStage };
+  const details = { ...diagnostics, parseStage, ...context };
   if (error === undefined) {
     console.info("Admin guest import upload", details);
     return;
@@ -83,6 +84,9 @@ async function parseUpload(formData: FormData) {
   const parsed = await parseGuestImportWorkbook(buffer, {
     onWorkbookReadError(error) {
       logUploadStage(diagnostics, "workbook-read", error);
+    },
+    onWorkbookLoaded(sheetNames) {
+      logUploadStage(diagnostics, "workbook-loaded", undefined, { sheetNames });
     },
   });
   if (!parsed.fatalError) {
