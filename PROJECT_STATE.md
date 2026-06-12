@@ -7,24 +7,26 @@
 - **Stack**: Next.js App Router, TypeScript, Node.js 22, PostgreSQL 17 through
   `pg`, Docker Compose, and the persistent `postgres_data` named volume.
 - **Branches**: `develop` is active integration; `main` is manual release only.
-  Simple XLSX import PR #22 is merged at `cfb77c2`; completed branches are
-  deleted locally and remotely after merge.
+  Completed feature/fix/chore branches must be merged through passing PRs and
+  deleted locally and remotely.
 - **Deployment/data**: the test VM is expected at `192.168.50.194:3000`.
   PostgreSQL data must never be reset, truncated, replaced, or removed. Never
   run `docker compose down -v`.
-- **Current focus**: validate the merged admin `.xlsx` import on the test VM,
-  then load the real invitation list. New templates use one person per row with
-  `First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`; matching last
-  names become `The [Last Name] Family`.
+- **Current focus**: validate the robust admin `.xlsx` import on the test VM,
+  then load the real invitation list. SheetJS reads uploaded workbooks while
+  ExcelJS generates the styled template. New templates use one person per row
+  with `First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`; matching
+  last names become `The [Last Name] Family`.
 - **Import safety**: import is admin-only, in-memory, transactional, add-only,
   duplicate-aware, and unable to update or delete existing records.
 - **Recent work**: PostgreSQL migration, admin household management, Cloudflare
-  Server Action origins, tolerant XLSX parsing, simple templates, and explicit
-  family-grouping previews are merged into `develop`.
-- **Validation**: generated-template upload, populated ExcelJS workbook parsing,
-  malformed binary handling, readable-workbook format errors, formatting, lint,
-  type checking, PostgreSQL-backed import and duplicate re-upload tests, the
-  production build, and deployment-script syntax pass in local and GitHub CI.
+  Server Action origins, simple templates, explicit family-grouping previews,
+  and SheetJS upload parsing for external-writer compatibility.
+- **Validation**: generated-template upload, independently generated workbook
+  parsing, namespace-prefixed `workbook.xml`, malformed binary handling,
+  readable-workbook format errors, formatting, lint, type checking,
+  PostgreSQL-backed import and duplicate re-upload tests, production build, and
+  deployment-script syntax.
 - **Pending**: deploy the merged parser fix to the test VM; verify template
   download/re-upload, populated workbook preview/import, duplicate re-upload,
   unchanged existing data, public surname lookup, app restart/rebuild
@@ -43,9 +45,11 @@
 - All database calls are async.
 - Admin-only `.xlsx` bulk import for households and invited guests is available
   from the dashboard.
-- The XLSX upload parser repair keeps ExcelJS external to the Next.js server
-  bundle, adds upload-stage diagnostics, and distinguishes unreadable files from
-  readable workbooks with bad structure.
+- SheetJS reads uploaded XLSX files so namespace-prefixed and other valid
+  external-writer workbooks do not depend on ExcelJS parser compatibility.
+  ExcelJS remains only for styled template generation.
+- Upload-stage diagnostics identify the reader and distinguish unreadable files
+  from readable workbooks with bad structure.
 - New XLSX templates use five human-readable columns and group people by last
   name. The previous seven-column workbook remains accepted for compatibility.
 - All public pages remain unchanged in design.
@@ -81,7 +85,7 @@ completing VM validation.
 
 ## Pending Validation
 
-- Deploy merged `develop` commit `cfb77c2` or later to the Debian test VM once
+- Deploy the latest merged `develop` to the Debian test VM once
   `192.168.50.194` is reachable.
 - Verify postgres container healthy (`docker compose ps`).
 - Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
@@ -91,8 +95,9 @@ completing VM validation.
 - Verify a populated XLSX previews/imports and a second upload skips duplicates.
 - Verify existing household contacts, guest notes/statuses, households, and
   guests remain unchanged by import.
-- Confirm failed XLSX parsing logs filename, size, MIME type, parse stage, and
-  the underlying ExcelJS error without logging spreadsheet contents.
+- Confirm failed XLSX parsing logs filename, size, MIME type, parse stage,
+  `reader: sheetjs`, and the underlying parser error without logging
+  spreadsheet contents.
 - Confirm Postgres data survives `docker compose restart app`.
 - Confirm Postgres data survives `docker compose up -d --build`.
 - Import the real invitation household and guest list.
@@ -215,6 +220,8 @@ Table `invited_guests`:
   supply their former household/person override columns. Duplicate guest
   detection uses same household + same first name + same last name.
 - Template limits are `.xlsx` only, 10 MB maximum upload, 5,000 data rows.
+- Uploaded workbooks are decoded with SheetJS. ExcelJS is retained only for
+  generating the styled template.
 - Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`.
 - `ADMIN_PASSWORD` is the admin login password. `SESSION_SECRET` signs cookies and
   is never typed by the user.

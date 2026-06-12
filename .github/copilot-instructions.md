@@ -104,10 +104,11 @@ row. Simple rows with the same last name are grouped into
 `The [Last Name] Family`; the old seven-column format remains parseable for
 compatibility. Duplicate people are same household + first name + last name.
 Uploads are converted from `File.arrayBuffer()` to a Node `Buffer`, parsed in
-memory with ExcelJS, and discarded. Do not bundle ExcelJS into the Next.js
-server output. Parse failures must log filename, file size, MIME type, parse
-stage, parsed sheet names, and the underlying error without logging workbook
-contents.
+memory with SheetJS, and discarded. ExcelJS is retained only for styled
+template generation because its upload reader cannot handle every structurally
+valid workbook. Keep both libraries external to the Next.js server output.
+Parse failures must log filename, file size, MIME type, parse stage, reader,
+parsed sheet names, and the underlying error without logging workbook contents.
 
 **Security rules:**
 

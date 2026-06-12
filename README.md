@@ -119,13 +119,16 @@ seven-column template remains accepted for backward compatibility, but new
 downloads use only the simple five-column format.
 
 Uploads are parsed in memory and not stored on disk. Only `.xlsx` files are
-accepted, with a 10 MB upload limit and 5,000 data-row limit.
+accepted, with a 10 MB upload limit and 5,000 data-row limit. SheetJS reads
+uploads for compatibility with structurally valid files from Excel, Numbers,
+Google Sheets, LibreOffice, and generated workbook tools. ExcelJS remains in
+use only for generating the styled download template.
 
 If an upload cannot be read, check the app server logs. They record the filename,
-file size, MIME type, parse stage, parsed sheet names, and underlying ExcelJS
-error, but never log spreadsheet contents. A readable workbook with a missing
-`Guests` sheet or unrecognized required headers is reported as a workbook format
-error.
+file size, MIME type, parse stage, reader, parsed sheet names, and underlying
+parser error, but never log spreadsheet contents. A readable workbook with a
+missing `Guests` sheet or unrecognized required headers is reported as a
+workbook format error.
 
 ## Quality Checks
 
