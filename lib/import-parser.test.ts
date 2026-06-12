@@ -1,7 +1,10 @@
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
+import * as XLSX from "xlsx";
 import { describe, expect, it } from "vitest";
 import {
   fileToImportBuffer,
+  GUEST_IMPORT_READER,
   parseGuestImportWorkbook,
   WORKBOOK_FORMAT_ERROR,
 } from "./import-parser";
@@ -21,6 +24,42 @@ async function workbookBuffer(
   sheet.addRow([...headers]);
   rows.forEach((row) => sheet.addRow(row));
   return Buffer.from(await workbook.xlsx.writeBuffer());
+}
+
+function sheetJsWorkbookBuffer(
+  rows: string[][],
+  headers: readonly string[] = GUEST_IMPORT_HEADERS,
+): Buffer {
+  const workbook = XLSX.utils.book_new();
+  const sheet = XLSX.utils.aoa_to_sheet([[...headers], ...rows]);
+  XLSX.utils.book_append_sheet(workbook, sheet, GUEST_IMPORT_SHEETS.guests);
+  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+}
+
+async function namespacePrefixedWorkbookBuffer(): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(
+    await workbookBuffer([["Ana María", "García", "", "", "External writer"]]),
+  );
+  const workbookXmlFile = zip.file("xl/workbook.xml");
+  if (!workbookXmlFile) {
+    throw new Error("Generated fixture is missing xl/workbook.xml");
+  }
+
+  const workbookXml = (await workbookXmlFile.async("string"))
+    .replace(
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+      '<x:workbook xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+    )
+    .replace("</workbook>", "</x:workbook>");
+  if (!workbookXml.includes("<x:workbook")) {
+    throw new Error("Could not create the namespace-prefixed workbook fixture");
+  }
+
+  zip.file("xl/workbook.xml", workbookXml);
+  return zip.generateAsync({
+    type: "nodebuffer",
+    compression: "DEFLATE",
+  });
 }
 
 describe("guest import parser", () => {
@@ -57,6 +96,67 @@ describe("guest import parser", () => {
       personLastName: "Wolfe",
       searchLastName: "Wolfe",
       householdName: "The Wolfe Family",
+    });
+  });
+
+  it("parses a workbook written independently with SheetJS", async () => {
+    const parsed = await parseGuestImportWorkbook(
+      sheetJsWorkbookBuffer([
+        ["Guerdithe", "Nelson", "guerdithe@example.com", "", "Bride"],
+      ]),
+    );
+
+    expect(parsed).toEqual({
+      rows: [
+        expect.objectContaining({
+          firstName: "Guerdithe",
+          personLastName: "Nelson",
+          householdName: "The Nelson Family",
+          contactEmail: "guerdithe@example.com",
+          notes: "Bride",
+        }),
+      ],
+      errors: [],
+      emptyRowsIgnored: 0,
+    });
+  });
+
+  it("parses namespace-prefixed workbook XML that ExcelJS cannot read", async () => {
+    const buffer = await namespacePrefixedWorkbookBuffer();
+    const zip = await JSZip.loadAsync(buffer);
+    const workbookXml = await zip.file("xl/workbook.xml")?.async("string");
+    const sheetNames: string[][] = [];
+
+    expect(workbookXml).toContain(
+      '<x:workbook xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+    );
+
+    const excelJsWorkbook = new ExcelJS.Workbook();
+    await expect(
+      excelJsWorkbook.xlsx.load(
+        buffer as unknown as Parameters<typeof excelJsWorkbook.xlsx.load>[0],
+      ),
+    ).rejects.toThrow("reading 'sheets'");
+
+    const parsed = await parseGuestImportWorkbook(buffer, {
+      onWorkbookLoaded(names) {
+        sheetNames.push(names);
+      },
+    });
+
+    expect(GUEST_IMPORT_READER).toBe("sheetjs");
+    expect(sheetNames).toEqual([[GUEST_IMPORT_SHEETS.guests]]);
+    expect(parsed).toEqual({
+      rows: [
+        expect.objectContaining({
+          firstName: "Ana María",
+          personLastName: "García",
+          householdName: "The García Family",
+          notes: "External writer",
+        }),
+      ],
+      errors: [],
+      emptyRowsIgnored: 0,
     });
   });
 
