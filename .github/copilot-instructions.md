@@ -78,7 +78,11 @@ Use Conventional Commits. Keep each commit to one logical change.
 
 ## Key Conventions
 
-**Postgres migrations are forward-only and additive.** Never drop, truncate, or rewrite tables. New migrations are added to `lib/migrate.ts` with a unique name. Always preserve all household, guest, and settings data.
+**Postgres migrations are forward-only and additive.** Never drop, truncate, or
+rewrite tables. New migrations are added to `lib/migrate.ts` with a unique name.
+Already-recorded migration rows may remain even when a retired migration is no
+longer in the active list. Always preserve all household, guest, and settings
+data.
 
 **Admin autosave on blur.** Household name, person name, RSVP status, and notes all save to Postgres when the field loses focus. No Save button. Show `saving` → `saved` / `error` feedback without discarding typed values.
 

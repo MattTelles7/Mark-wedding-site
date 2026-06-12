@@ -12,7 +12,7 @@
 - [x] Add admin RSVP open/closed control stored in database.
 - [x] Migrate database from SQLite to PostgreSQL with Docker Compose.
 - [x] Fix admin login crash (removed SQLite dependency, all DB calls now async).
-- [ ] Deploy feature/postgres-migration to Debian test VM and verify health.
+- [x] Deploy the PostgreSQL stack to the Debian test VM and verify health.
 - [x] Prevent public changes after household confirmation.
 - [x] Allow admin response editing and household unlocking.
 - [x] Add household/guest CSV export and dashboard counts.
@@ -43,9 +43,8 @@
       import.
 - [ ] Test household and invited-person deletion through a real browser.
 - [ ] Confirm admin logout through a real browser.
-- [x] Deploy this feature to the Debian 13 VM and confirm health, admin login,
-      the RSVP availability control, and legacy data preservation through
-      container rebuilds.
+- [x] Confirm health, admin login, the RSVP availability control, and Postgres
+      data preservation through container rebuilds on the Debian 13 VM.
 - [ ] Confirm household and invited-person data persists through a VM reboot.
 - [ ] Test a branch-aware fresh install on a clean Ubuntu or Debian VM.
 - [ ] Test switching a VM from `develop` to `main` after a manual release.
