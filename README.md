@@ -27,6 +27,7 @@ Do not use `main` as the active development branch.
 - Password-protected admin dashboard
 - Blur-based autosave with visible admin save status
 - Six response summaries, household filtering, editing, and CSV export
+- Admin-only `.xlsx` bulk import for households and invited people
 - Automatic schema migrations on startup (forward-only, idempotent)
 - Docker Compose deployment on port `3000`
 - Repeatable install and update scripts
@@ -79,6 +80,55 @@ people, then open RSVPs when the invitation list is ready.
 The admin creates each household together with its first invited person.
 Household and person edits save when a field loses focus. Submitted households
 remain editable by the admin and can be reopened for public submission.
+
+## Admin XLSX Bulk Import
+
+The admin dashboard includes **Bulk Import Families** above manual household
+entry.
+
+1. Click **Download Template**.
+2. Fill out the `Guests` sheet. It is one row per invited person.
+3. Upload the completed `.xlsx`.
+4. Click **Preview Import**.
+5. Review households to create, existing households matched, guests to create,
+   duplicate guests skipped, invalid rows, and warnings.
+6. Click **Import Valid Rows**.
+
+The template has three sheets: `Guests`, `Instructions`, and `Example`. `Guests`
+is first and has these columns:
+
+| Column      | Required? | Meaning                              |
+| ----------- | --------- | ------------------------------------ |
+| First Name  | Yes       | Invited person's first name          |
+| Last Name   | Yes       | Invited person's last name           |
+| Email       | No        | Household-level contact email        |
+| Phone       | No        | Household-level contact phone        |
+| Admin Notes | No        | Private note for this invited person |
+
+People with the same last name are grouped into `The [Last Name] Family`. For
+example, Matt Telles and Lilly Telles become `The Telles Family`. This is
+intentionally simple; if automatic grouping is wrong, complete the import and
+adjust the households manually in the admin dashboard.
+
+The import is **add-only**. It never deletes existing households/guests, never
+updates existing household contact data, and never updates existing guest notes
+or RSVP statuses. Existing generated households are matched by normalized
+`The [Last Name] Family` and last name. Duplicate people are detected by same
+household, same first name, and same last name and are skipped. The previous
+seven-column template remains accepted for backward compatibility, but new
+downloads use only the simple five-column format.
+
+Uploads are parsed in memory and not stored on disk. Only `.xlsx` files are
+accepted, with a 10 MB upload limit and 5,000 data-row limit. SheetJS reads
+uploads for compatibility with structurally valid files from Excel, Numbers,
+Google Sheets, LibreOffice, and generated workbook tools. ExcelJS remains in
+use only for generating the styled download template.
+
+If an upload cannot be read, check the app server logs. They record the filename,
+file size, MIME type, parse stage, reader, parsed sheet names, and underlying
+parser error, but never log spreadsheet contents. A readable workbook with a
+missing `Guests` sheet or unrecognized required headers is reported as a
+workbook format error.
 
 ## Quality Checks
 

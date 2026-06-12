@@ -1,12 +1,57 @@
 # Project State
 
+## Agent Handoff Summary
+
+- **Read first**: `RULES.md` and this file are authoritative. Repository files
+  and current Git/GitHub state override stale chat memory or prior AI summaries.
+- **Stack**: Next.js App Router, TypeScript, Node.js 22, PostgreSQL 17 through
+  `pg`, Docker Compose, and the persistent `postgres_data` named volume.
+- **Branches**: `develop` is active integration; `main` is manual release only.
+  Completed feature/fix/chore branches must be merged through passing PRs and
+  deleted locally and remotely.
+- **Deployment/data**: the test VM is expected at `192.168.50.194:3000`.
+  PostgreSQL data must never be reset, truncated, replaced, or removed. Never
+  run `docker compose down -v`.
+- **Current focus**: validate the robust admin `.xlsx` import on the test VM,
+  then load the real invitation list. SheetJS reads uploaded workbooks while
+  ExcelJS generates the styled template. New templates use one person per row
+  with `First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`; matching
+  last names become `The [Last Name] Family`.
+- **Import safety**: import is admin-only, in-memory, transactional, add-only,
+  duplicate-aware, and unable to update or delete existing records.
+- **Recent work**: PostgreSQL migration, admin household management, Cloudflare
+  Server Action origins, simple templates, explicit family-grouping previews,
+  and SheetJS upload parsing for external-writer compatibility.
+- **Validation**: generated-template upload, independently generated workbook
+  parsing, namespace-prefixed `workbook.xml`, malformed binary handling,
+  readable-workbook format errors, formatting, lint, type checking,
+  PostgreSQL-backed import and duplicate re-upload tests, production build, and
+  deployment-script syntax.
+- **Pending**: deploy the merged parser fix to the test VM; verify template
+  download/re-upload, populated workbook preview/import, duplicate re-upload,
+  unchanged existing data, public surname lookup, app restart/rebuild
+  persistence, and server log diagnostics. On June 12, 2026, SSH to
+  `192.168.50.194` timed out through the current VPN route.
+- **Commands**: `npm run format`, `npm run lint`, `npm run typecheck`,
+  `npm test`, `npm run build`, `bash -n install.sh update.sh`,
+  `docker compose up -d --build`, and
+  `curl http://localhost:3000/api/health`.
+
 ## Current Status
 
 - `develop` is the active integration branch.
-- `feature/postgres-migration` is the current in-progress branch.
-- The app has been migrated from SQLite to PostgreSQL.
-- Admin login crash was fixed by removing the SQLite dependency and ensuring
-  all database calls are properly async.
+- PostgreSQL is the sole active database; no SQLite runtime or application data
+  path remains.
+- All database calls are async.
+- Admin-only `.xlsx` bulk import for households and invited guests is available
+  from the dashboard.
+- SheetJS reads uploaded XLSX files so namespace-prefixed and other valid
+  external-writer workbooks do not depend on ExcelJS parser compatibility.
+  ExcelJS remains only for styled template generation.
+- Upload-stage diagnostics identify the reader and distinguish unreadable files
+  from readable workbooks with bad structure.
+- New XLSX templates use five human-readable columns and group people by last
+  name. The previous seven-column workbook remains accepted for compatibility.
 - All public pages remain unchanged in design.
 - Reception and ceremony details are confirmed and displayed correctly.
 - Registry section is permanently removed.
@@ -14,9 +59,9 @@
 
 ## Last Completed Feature
 
-Postgres migration: switched from SQLite (`better-sqlite3`) to PostgreSQL (`pg`)
-with Docker Compose postgres service, named volume `postgres_data`, automatic
-startup migrations via `instrumentation.ts`, and updated CI with Postgres service.
+Admin XLSX bulk import: admins can download a styled Excel template, upload a
+completed `.xlsx`, preview row-level errors/warnings/duplicates, and import valid
+rows into Postgres without updating or deleting existing records.
 
 ## Database
 
@@ -25,24 +70,34 @@ startup migrations via `instrumentation.ts`, and updated CI with Postgres servic
 - **Volume**: Docker named volume `postgres_data` (never delete)
 - **Migrations**: `lib/migrate.ts` — forward-only, idempotent, tracked by name in
   `migrations` table
-- **Migration 001**: Creates `migrations`, `settings`, `households`,
-  `invited_guests`, `legacy_rsvps` tables
-- **Old SQLite data**: Intentionally abandoned. No real production data existed at
-  time of migration.
+- **Migration 001**: Creates `settings`, `households`, and `invited_guests`
+  tables
+- No startup migration drops or truncates application tables. Existing
+  installations may retain historical migration records that are no longer in
+  the active migration list.
 
 ## Known Missing Content
 
 All ceremony and reception details are confirmed and displayed. No content is
-intentionally hidden or placeholder. The only remaining pre-launch work is
-importing the real invitation household/guest list and completing VM validation.
+intentionally hidden or placeholder. The only remaining pre-launch work is using
+the admin bulk import to load the real invitation household/guest list and
+completing VM validation.
 
 ## Pending Validation
 
-- Deploy `feature/postgres-migration` to Debian test VM.
+- Deploy the latest merged `develop` to the Debian test VM once
+  `192.168.50.194` is reachable.
 - Verify postgres container healthy (`docker compose ps`).
 - Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
 - Verify admin login works with configured `ADMIN_PASSWORD`.
 - Verify household creation, guest management, public RSVP flow.
+- Verify the downloaded XLSX template can be uploaded and previewed.
+- Verify a populated XLSX previews/imports and a second upload skips duplicates.
+- Verify existing household contacts, guest notes/statuses, households, and
+  guests remain unchanged by import.
+- Confirm failed XLSX parsing logs filename, size, MIME type, parse stage,
+  `reader: sheetjs`, and the underlying parser error without logging
+  spreadsheet contents.
 - Confirm Postgres data survives `docker compose restart app`.
 - Confirm Postgres data survives `docker compose up -d --build`.
 - Import the real invitation household and guest list.
@@ -99,6 +154,10 @@ curl http://localhost:3000/api/health
 - Database pool + helpers: `lib/db.ts`
 - Migration runner: `lib/migrate.ts`
 - Migration CLI script: `scripts/migrate.ts`
+- XLSX import template/parser/service: `lib/import-template.ts`,
+  `lib/import-parser.ts`, `lib/import-service.ts`, `lib/import-types.ts`
+- Admin bulk import UI/actions/routes: `app/admin/bulk-import-families.tsx`,
+  `app/admin/import/actions.ts`, `app/admin/import/template/route.ts`
 - Startup hook: `instrumentation.ts`
 - Authentication: `lib/auth.ts`
 - Deployment scripts: `install.sh`, `update.sh`
@@ -109,9 +168,8 @@ PostgreSQL tables created by migration `001_initial_schema`:
 
 Table `migrations`:
 
-- `id BIGSERIAL PRIMARY KEY`
-- `name TEXT UNIQUE NOT NULL`
-- `applied_at TIMESTAMPTZ`
+- `name TEXT PRIMARY KEY`
+- `applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 
 Table `settings`:
 
@@ -139,12 +197,6 @@ Table `invited_guests`:
 - optional admin-only `notes`
 - `created_at` and `updated_at TIMESTAMPTZ`
 
-Table `legacy_rsvps`:
-
-- `id BIGSERIAL PRIMARY KEY`
-- Preserves free-form responses from the old RSVP system
-- Read-only; no new rows are inserted
-
 ## Decisions for Future Sessions
 
 - Wedding display content comes from runtime environment variables where practical.
@@ -161,6 +213,15 @@ Table `legacy_rsvps`:
 - The app uses signed, eight-hour admin session cookies rather than accounts.
 - Rate limiting is intentionally in-memory for the single-process deployment.
 - CSV cells that can trigger spreadsheet formulas are prefixed safely.
+- Admin `.xlsx` imports are add-only: existing households/guests are matched for
+  duplicate detection but never updated or deleted by import.
+- Simple import matching uses normalized generated household name + last name.
+  The generated name is `The [Last Name] Family`. Legacy templates may still
+  supply their former household/person override columns. Duplicate guest
+  detection uses same household + same first name + same last name.
+- Template limits are `.xlsx` only, 10 MB maximum upload, 5,000 data rows.
+- Uploaded workbooks are decoded with SheetJS. ExcelJS is retained only for
+  generating the styled template.
 - Proxy forwarding headers are trusted only when `TRUST_PROXY_HEADERS=true`.
 - `ADMIN_PASSWORD` is the admin login password. `SESSION_SECRET` signs cookies and
   is never typed by the user.

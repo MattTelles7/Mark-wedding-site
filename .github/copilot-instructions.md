@@ -1,5 +1,15 @@
 # Copilot Instructions
 
+## Required Orientation
+
+Read `RULES.md` and `PROJECT_STATE.md` before making changes. Treat those files,
+the current checkout, and current GitHub state as authoritative; never trust
+stale chat memory or an old AI handoff over the repository.
+
+Preserve PostgreSQL data, work from `develop` through short-lived branches, open
+pull requests into `develop`, and delete merged feature/fix branches. `main` is
+manual-release only.
+
 ## Commands
 
 ```bash
@@ -35,6 +45,9 @@ Docker Compose stack: `app` + `postgres` containers. One Ubuntu/Debian VM.
 - Admin: `app/admin/` (login at `/admin`, household management dashboard)
 - Server Actions in `app/rsvp/actions.ts` and `app/admin/actions.ts`
 - Business logic: `lib/admin-service.ts`, `lib/admin-validation.ts`
+- Admin XLSX import: `app/admin/bulk-import-families.tsx`,
+  `app/admin/import/actions.ts`, `app/admin/import/template/route.ts`,
+  `lib/import-template.ts`, `lib/import-parser.ts`, `lib/import-service.ts`
 - Auth: `lib/auth.ts` — signed 8-hour session cookie, no user accounts
 - Database: `lib/database.ts` — async Postgres functions (no class, no ORM)
 - DB pool: `lib/db.ts` — lazy Pool singleton, `query`, `queryOne`, `withTransaction`
@@ -43,7 +56,7 @@ Docker Compose stack: `app` + `postgres` containers. One Ubuntu/Debian VM.
 - Site config: `lib/site.ts` — reads wedding content from env vars, never hardcodes personal data
 - Rate limiting: `lib/rate-limit.ts` — intentionally in-memory (single process)
 
-**Key tables:** `households`, `invited_guests`, `settings` (contains `rsvps_open`), legacy `legacy_rsvps` (read-only, preserved)
+**Key tables:** `households`, `invited_guests`, `settings` (contains `rsvps_open`)
 
 ## Git Workflow
 
@@ -65,7 +78,11 @@ Use Conventional Commits. Keep each commit to one logical change.
 
 ## Key Conventions
 
-**Postgres migrations are forward-only and additive.** Never drop, truncate, or rewrite tables. New migrations are added to `lib/migrate.ts` with a unique name. Always preserve all household, guest, and settings data.
+**Postgres migrations are forward-only and additive.** Never drop, truncate, or
+rewrite tables. New migrations are added to `lib/migrate.ts` with a unique name.
+Already-recorded migration rows may remain even when a retired migration is no
+longer in the active list. Always preserve all household, guest, and settings
+data.
 
 **Admin autosave on blur.** Household name, person name, RSVP status, and notes all save to Postgres when the field loses focus. No Save button. Show `saving` → `saved` / `error` feedback without discarding typed values.
 
@@ -78,6 +95,20 @@ Use Conventional Commits. Keep each commit to one logical change.
 **Wedding content comes from env vars** (`COUPLE_NAMES`, `WEDDING_DATE`, `CEREMONY_ADDRESS`, etc.) via `lib/site.ts`. Missing optional content is hidden; never invent or approximate it.
 
 **CSV formula injection prevention.** Values that can trigger spreadsheet formulas are prefixed in `lib/csv.ts`.
+
+**XLSX bulk imports are add-only.** Admin imports may create missing households
+and invited people, skip duplicate people, and report invalid rows. They must
+never update or delete existing households/guests. The downloaded template uses
+`First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`, one person per
+row. Simple rows with the same last name are grouped into
+`The [Last Name] Family`; the old seven-column format remains parseable for
+compatibility. Duplicate people are same household + first name + last name.
+Uploads are converted from `File.arrayBuffer()` to a Node `Buffer`, parsed in
+memory with SheetJS, and discarded. ExcelJS is retained only for styled
+template generation because its upload reader cannot handle every structurally
+valid workbook. Keep both libraries external to the Next.js server output.
+Parse failures must log filename, file size, MIME type, parse stage, reader,
+parsed sheet names, and the underlying error without logging workbook contents.
 
 **Security rules:**
 
@@ -103,6 +134,7 @@ cp .env.example .env
 | `POSTGRES_DB`                            | Postgres database name (used by docker-compose)                 |
 | `POSTGRES_USER`                          | Postgres user (used by docker-compose)                          |
 | `POSTGRES_PASSWORD`                      | Postgres password (used by docker-compose)                      |
+| `NEXT_SERVER_ACTION_ALLOWED_ORIGINS`     | Public proxy hostnames allowed to submit server actions         |
 | `WEDDING_DATE_ISO`, `COUPLE_NAMES`, etc. | Wedding display content                                         |
 
 ## Deployment

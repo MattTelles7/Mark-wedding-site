@@ -12,7 +12,7 @@
 - [x] Add admin RSVP open/closed control stored in database.
 - [x] Migrate database from SQLite to PostgreSQL with Docker Compose.
 - [x] Fix admin login crash (removed SQLite dependency, all DB calls now async).
-- [ ] Deploy feature/postgres-migration to Debian test VM and verify health.
+- [x] Deploy the PostgreSQL stack to the Debian test VM and verify health.
 - [x] Prevent public changes after household confirmation.
 - [x] Allow admin response editing and household unlocking.
 - [x] Add household/guest CSV export and dashboard counts.
@@ -31,12 +31,21 @@
 - [x] Add confirmed reception time and location.
 - [x] Remove registry section, nav link, and all registry wording.
 - [x] Add favicon and Apple touch icon from couple photo.
-- [ ] Import the real invitation household and guest list.
+- [x] Add admin `.xlsx` bulk import template, preview, duplicate detection, and
+      add-only final import.
+- [x] Parse uploaded `.xlsx` files with SheetJS, retain ExcelJS for template
+      generation, and cover namespace-prefixed workbook XML.
+- [x] Simplify new XLSX templates to one person per row and group matching last
+      names into `The [Last Name] Family`.
+- [ ] Verify the robust XLSX parser on the Debian test VM with template
+      re-upload, external/sample workbook preview, populated import, duplicate
+      re-upload, and data-preservation checks.
+- [ ] Import the real invitation household and guest list using the admin bulk
+      import.
 - [ ] Test household and invited-person deletion through a real browser.
 - [ ] Confirm admin logout through a real browser.
-- [x] Deploy this feature to the Debian 13 VM and confirm health, admin login,
-      the RSVP availability control, and legacy data preservation through
-      container rebuilds.
+- [x] Confirm health, admin login, the RSVP availability control, and Postgres
+      data preservation through container rebuilds on the Debian 13 VM.
 - [ ] Confirm household and invited-person data persists through a VM reboot.
 - [ ] Test a branch-aware fresh install on a clean Ubuntu or Debian VM.
 - [ ] Test switching a VM from `develop` to `main` after a manual release.

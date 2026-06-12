@@ -91,6 +91,9 @@ and the production build. Update the project memory files when state changes.
 - Backups are handled by the project owner through Proxmox VM snapshots. No
   app-level backup script exists or should be added.
 - `DATABASE_URL` must be set in `.env`. The app fails loudly at startup if missing.
+- Bulk imports are add-only. Import features may read existing households and
+  invited guests for duplicate detection, but must never delete rows or update
+  existing household/guest data as part of an import.
 
 ## Admin UX
 
@@ -102,6 +105,21 @@ and the production build. Update the project memory files when state changes.
   Do not show a normal Save button when autosave is the established behavior.
 - Admin controls must remain usable without horizontal scrolling on a narrow
   phone viewport.
+- Admin spreadsheet uploads must be `.xlsx` only, parsed server-side, discarded
+  after processing, and shown with clear preview/import summaries and row-level
+  errors before data is inserted.
+- XLSX uploads must be read through `File.arrayBuffer()` into a Node `Buffer`.
+  Use SheetJS for upload parsing because ExcelJS cannot read every structurally
+  valid workbook. Keep ExcelJS only for styled template generation, and keep
+  both spreadsheet libraries external to the Next.js server bundle. Log
+  filename, size, MIME type, parse stage, reader, parsed sheet names, and the
+  underlying parser error without logging workbook contents. A readable
+  workbook with missing sheets/headers is a format error, not an
+  unreadable-file error.
+- The downloaded import template is one person per row with `First Name`,
+  `Last Name`, `Email`, `Phone`, and `Admin Notes`. Simple imports group the
+  same last name into `The [Last Name] Family`. Import remains add-only and
+  never updates or deletes existing households or invited people.
 
 ## Content
 

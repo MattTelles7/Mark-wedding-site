@@ -6,134 +6,97 @@ All notable changes to this project are documented here.
 
 ### Added
 
-- PostgreSQL 17 database service in Docker Compose with named volume
-  `postgres_data` (never deleted by installer or updater)
-- `lib/db.ts` — lazy Postgres pool singleton with `query`, `queryOne`,
-  `withTransaction`, and `checkDatabaseConnection` helpers
-- `lib/migrate.ts` — forward-only, idempotent migration runner tracked by name
-  in a `migrations` table
-- `scripts/migrate.ts` — CLI migration runner invoked by `npm run db:migrate`
-- `instrumentation.ts` — Next.js startup hook that runs migrations before the
-  app serves traffic
-- `vitest.config.ts` — Vitest configuration with global setup for migrations and
-  per-test table truncation; database integration tests skip gracefully without
-  `DATABASE_URL`
-- `/api/health` now checks Postgres connectivity with `SELECT 1` and returns
-  `{ status: "ok", database: "ok" }` or `503` if unreachable
-- CI workflow now starts a Postgres 17 service container and runs migrations
-  before tests
+- Admin-only `.xlsx` import with a downloadable `Guests`, `Instructions`, and
+  `Example` workbook.
+- Dry-run previews for families to create, existing families matched, people to
+  create, duplicates skipped, warnings, and rejected rows.
+- PostgreSQL-backed regression coverage for add-only imports, duplicate
+  re-uploads, transaction rollback, and existing-record preservation.
+- Regression coverage for namespace-prefixed workbook XML that ExcelJS cannot
+  read.
 
 ### Changed
 
-- All database code rewritten from synchronous SQLite to async Postgres (`pg`)
-- `lib/database.ts` — complete rewrite as async functions; all queries use
-  `$1, $2, ...` parameterization; `confirmHousehold` uses
-  `SELECT ... FOR UPDATE` for concurrency safety
-- `lib/admin-service.ts` — `AdminHouseholdRepository` methods now return
-  `Promise`; all four service functions are async
-- `app/admin/page.tsx`, `app/rsvp/page.tsx` — added `await` to all DB calls
-- `app/admin/actions.ts`, `app/rsvp/actions.ts` — all DB calls now awaited
-- `app/admin/export/route.ts` — `getHouseholdExportRows()` awaited
-- `docker-compose.yml` — added `postgres` service; removed `./data:/app/data`
-  bind mount; app depends on postgres health check
-- `Dockerfile` — removed `python3 make g++` build tools (no longer needed)
-- `next.config.ts` — removed `serverExternalPackages: ["better-sqlite3"]`
-- `install.sh` — generates `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`,
-  `DATABASE_URL` if missing; removed SQLite data-dir assertions; never runs
-  `docker compose down -v`
-- `update.sh` — removed SQLite data-dir check; asserts `postgres_data` volume
-  presence; prints data-preservation warning
-- `.env.example` — added Postgres env vars; removed `DATABASE_PATH`
-- `package.json` — removed `better-sqlite3`, added `pg@8.16.0`,
-  `@types/pg@8.11.14`, `tsx@4.19.4`; added `db:migrate` script
-- `lib/database.test.ts`, `lib/admin-service.test.ts`,
-  `app/admin/actions.test.ts` — fully rewritten for async Postgres; unit tests
-  use mock repositories; integration tests skip without `DATABASE_URL`
-
-### Removed
-
-- `better-sqlite3` and `@types/better-sqlite3` runtime dependencies
-- `WeddingDatabase` class and all synchronous SQLite code
-- `./data:/app/data` Docker bind mount
+- New guest templates use `First Name`, `Last Name`, `Email`, `Phone`, and
+  `Admin Notes`, with one invited person per row.
+- People with the same last name are grouped into
+  `The [Last Name] Family`.
+- Import headers accept documented aliases, punctuation differences, reordered
+  columns, and unrelated extra columns.
+- The previous seven-column workbook remains accepted for backward
+  compatibility.
+- Import previews list each family with the people who will be added.
+- Project handoff and operating documentation now consistently describe the
+  Postgres stack and simple add-only import.
+- Uploaded workbooks are decoded with SheetJS 0.20.3. ExcelJS remains only for
+  styled template generation.
 
 ### Fixed
 
-- Admin login crash: previously the synchronous SQLite `WeddingDatabase` class
-  failed during async Next.js request processing; all database access is now
-  properly async and the admin session flow is stable
-
-  7536 Church Ln, West Harrison, IN 47060 — displayed beneath the venue
-  on the homepage schedule and event card
-
-- Confirmed reception details: Knights of Columbus Hall, 333 Main Street,
-  Brookville, IN 47012, directly following Mass — displayed on the homepage
-  schedule and event card
-- Browser tab favicon (`app/icon.png`, 512×512) and Apple touch icon
-  (`app/apple-icon.png`, 180×180) cropped from the bottom half of the
-  couple silhouette engagement photo
+- Uploaded workbooks are read from `File.arrayBuffer()` into a Node `Buffer`
+  before SheetJS parsing.
+- Structurally valid workbooks with namespace-prefixed `workbook.xml` roots now
+  parse successfully.
+- SheetJS and ExcelJS remain external Node dependencies instead of being
+  rewritten in the Next.js server bundle.
+- Readable workbooks with missing sheets or required headers report a format
+  error instead of an unreadable-file error.
+- Upload diagnostics record filename, size, MIME type, parse stage, sheet
+  names, and the underlying error without logging spreadsheet contents.
+- Concurrent imports are serialized, rejected-row counts are deduplicated, and
+  duplicate household records no longer hide existing guest matches.
 
 ### Removed
 
-- Registry section and nav link removed entirely; there is no registry for
-  this wedding
+- A retired startup migration that could drop the historical
+  `legacy_rsvps` table.
+- Obsolete SQLite directory placeholders and unused legacy-response admin CSS.
 
-### Changed
+## Historical
 
-- Reception event card now shows venue, address, and timing instead of the
-  former placeholder
+### PostgreSQL Migration
 
-- Custom navy/cream invitation-inspired homepage for Mark & Guerdithe
-- Confirmed hosts, formal invitation wording, wedding date, ceremony time and
-  venue, and RSVP deadline
-- Three supplied engagement photos with responsive hero and invitation layouts
-- Hydration-safe live countdown with wedding-day minutes and post-event state
-- Reduced-motion-aware CSS reveals for homepage copy and photo cards
-- Additive SQLite migration with `settings`, `households`, and
-  `invited_guests` tables while preserving the original `rsvps` table
-- Exact, rate-limited surname search with household selection and per-person
-  attending/declined responses
-- Atomic final household confirmation and public response locking
-- Database-backed RSVP open/closed control
-- Admin household and invited-person creation, editing, filtering, locking,
-  unlocking, response editing, and confirmed deletion controls
-- Atomic household creation that requires at least one invited person
-- Blur-based SQLite autosave for household fields, invited people, statuses,
-  and admin notes with visible saving, saved, and failure feedback
-- Inline admin validation, household-name suggestions, and invited-person
-  surname defaults
-- Six household/guest dashboard counts and individual-level CSV export
-- Migration, household workflow, validation, countdown, and CSV regression
-  tests
-- Branch-aware install and update commands for `develop` and `main`
-- GitHub Actions CI for formatting, linting, types, tests, builds, and shell
-  syntax
-- Lightweight `/api/health` endpoint used by the Docker healthcheck
-- VM reboot, troubleshooting, branch switching, and persistence documentation
-- Mobile-first wedding landing page with details and registry sections
-- Server-validated RSVP actions backed by SQLite
-- Honeypot and basic in-memory RSVP rate limiting
-- Password-protected admin login with signed HTTP-only session cookies
-- Password-protected household RSVP dashboard and CSV export
-- Docker image, Docker Compose service, and persistent database mount
-- Ubuntu/Debian install and update scripts
-- Project rules, state, deployment, and customization documentation
+- Replaced the synchronous SQLite implementation with PostgreSQL 17 and async
+  `pg` database access.
+- Added the `postgres` Docker Compose service and persistent `postgres_data`
+  named volume.
+- Added forward-only startup migrations, a migration CLI, and a database-aware
+  `/api/health` endpoint.
+- Updated CI to run PostgreSQL-backed integration tests.
+- Removed `better-sqlite3`, the `WeddingDatabase` class, `DATABASE_PATH`, and the
+  former `./data:/app/data` Docker bind mount.
+- Updated installer and updater behavior to preserve `.env` and
+  `postgres_data`; neither script runs `docker compose down -v`.
+- Fixed the admin login crash caused by the former synchronous database layer.
 
-### Changed
+### Household RSVP And Admin
 
-- Removed all temporary template sections and unapproved personal details
-- New public responses now use invited households; legacy free-form responses
-  remain preserved and read-only in the admin dashboard
-- Installer reruns now preserve `.env`, `data`, and `data/app.db` while safely
-  checking out only `develop` or `main`
-- Updates now refuse dirty/diverged Git state or deployment layouts that could
-  bypass the persistent data mount
-- Docker healthchecks now use `/api/health`
-- Local and isolated test environments use a portable SQLite path and can keep
-  admin sessions over HTTP; public HTTPS deployments can require secure cookies
-- Completed work now requires a passing pull request into `develop`, followed
-  by local and remote branch cleanup
-- GitHub Actions now uses the Node.js 24-based checkout and setup-node actions
-- Admin terminology now uses `Last Name`, `Open for Submission`, and
-  `Submitted and Closed`, with matching reopen/close actions
-- The admin prevents empty household shells and protects the final invited
-  person from separate deletion
+- Replaced free-form responses with household invitations and individual
+  invited-person RSVP statuses.
+- Added exact normalized surname search, household selection, atomic
+  confirmation, public locking, and admin unlock/edit controls.
+- Added admin household and invited-person creation, autosave, validation,
+  deletion safeguards, dashboard counts, and formula-safe CSV export.
+- Added an admin RSVP availability control stored in the database.
+- Added signed admin sessions, rate limits, honeypot validation, and proxy-header
+  trust controls.
+
+### Wedding Site And Deployment
+
+- Added the invitation-inspired public site for Mark and Guerdithe with the
+  confirmed date, ceremony, reception, hosts, countdown, and supplied
+  photography.
+- Added responsive layouts, reduced-motion handling, favicon, and Apple touch
+  icon.
+- Removed the registry section and navigation link.
+- Added Docker packaging, branch-aware Ubuntu/Debian install and update scripts,
+  health checks, deployment documentation, and GitHub Actions validation.
+
+### Earlier SQLite Phase
+
+- The project originally used SQLite for free-form responses and later for the
+  first household RSVP implementation.
+- Historical installer behavior preserved `data/app.db`, and historical
+  deployments mounted `/app/data`.
+- Those details are retained here only as project history; PostgreSQL is the
+  sole current database.
