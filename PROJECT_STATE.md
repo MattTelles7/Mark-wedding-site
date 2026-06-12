@@ -7,19 +7,20 @@
 - **Stack**: Next.js App Router, TypeScript, Node.js 22, PostgreSQL 17 through
   `pg`, Docker Compose, and the persistent `postgres_data` named volume.
 - **Branches**: `develop` is active integration; `main` is manual release only.
-  XLSX repair PR #19 is merged at `18c7ee2`; its fix branch is deleted locally
-  and remotely. There are no open pull requests.
+  Simple XLSX import PR #22 is merged at `cfb77c2`; completed branches are
+  deleted locally and remotely after merge.
 - **Deployment/data**: the test VM is expected at `192.168.50.194:3000`.
   PostgreSQL data must never be reset, truncated, replaced, or removed. Never
   run `docker compose down -v`.
-- **Current focus**: simplify the admin `.xlsx` import and validate it on the
-  test VM. New templates use one person per row with `First Name`, `Last Name`,
-  `Email`, `Phone`, and `Admin Notes`; matching last names become
-  `The [Last Name] Family`. Import remains admin-only, in-memory, transactional,
-  add-only, duplicate-aware, and unable to update or delete existing records.
+- **Current focus**: validate the merged admin `.xlsx` import on the test VM,
+  then load the real invitation list. New templates use one person per row with
+  `First Name`, `Last Name`, `Email`, `Phone`, and `Admin Notes`; matching last
+  names become `The [Last Name] Family`.
+- **Import safety**: import is admin-only, in-memory, transactional, add-only,
+  duplicate-aware, and unable to update or delete existing records.
 - **Recent work**: PostgreSQL migration, admin household management, Cloudflare
-  Server Action origins, and admin XLSX template/preview/import are merged into
-  `develop`.
+  Server Action origins, tolerant XLSX parsing, simple templates, and explicit
+  family-grouping previews are merged into `develop`.
 - **Validation**: generated-template upload, populated ExcelJS workbook parsing,
   malformed binary handling, readable-workbook format errors, formatting, lint,
   type checking, PostgreSQL-backed import and duplicate re-upload tests, the
@@ -27,7 +28,7 @@
 - **Pending**: deploy the merged parser fix to the test VM; verify template
   download/re-upload, populated workbook preview/import, duplicate re-upload,
   unchanged existing data, public surname lookup, app restart/rebuild
-  persistence, and server log diagnostics. On June 11, 2026, SSH to
+  persistence, and server log diagnostics. On June 12, 2026, SSH to
   `192.168.50.194` timed out through the current VPN route.
 - **Commands**: `npm run format`, `npm run lint`, `npm run typecheck`,
   `npm test`, `npm run build`, `bash -n install.sh update.sh`,
@@ -37,9 +38,9 @@
 ## Current Status
 
 - `develop` is the active integration branch.
-- The app has been migrated from SQLite to PostgreSQL.
-- Admin login crash was fixed by removing the SQLite dependency and ensuring
-  all database calls are properly async.
+- PostgreSQL is the sole active database; no SQLite runtime or application data
+  path remains.
+- All database calls are async.
 - Admin-only `.xlsx` bulk import for households and invited guests is available
   from the dashboard.
 - The XLSX upload parser repair keeps ExcelJS external to the Next.js server
@@ -67,9 +68,9 @@ rows into Postgres without updating or deleting existing records.
   `migrations` table
 - **Migration 001**: Creates `settings`, `households`, and `invited_guests`
   tables
-- **Migration 002**: Drops the unused `legacy_rsvps` table if present
-- **Old SQLite data**: Intentionally abandoned. No real production data existed at
-  time of migration.
+- No startup migration drops or truncates application tables. Existing
+  installations may retain historical migration records that are no longer in
+  the active migration list.
 
 ## Known Missing Content
 
@@ -80,7 +81,7 @@ completing VM validation.
 
 ## Pending Validation
 
-- Deploy merged `develop` commit `18c7ee2` or later to the Debian test VM once
+- Deploy merged `develop` commit `cfb77c2` or later to the Debian test VM once
   `192.168.50.194` is reachable.
 - Verify postgres container healthy (`docker compose ps`).
 - Verify `/api/health` returns `{ status: "ok", database: "ok" }`.
@@ -162,9 +163,8 @@ PostgreSQL tables created by migration `001_initial_schema`:
 
 Table `migrations`:
 
-- `id BIGSERIAL PRIMARY KEY`
-- `name TEXT UNIQUE NOT NULL`
-- `applied_at TIMESTAMPTZ`
+- `name TEXT PRIMARY KEY`
+- `applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 
 Table `settings`:
 

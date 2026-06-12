@@ -8,5 +8,4 @@ coverage/
 *.log
 *.tsbuildinfo
 .DS_Store
-data/*
-!data/.gitkeep
+data/
